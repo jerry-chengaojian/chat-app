@@ -8,8 +8,50 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  username  String    @unique
-  password  String
-  connected Boolean   @default(false)
+  id            String         @id @default(cuid())
+  createdAt     DateTime       @default(now()) @map("created_at")
+  username      String         @unique
+  password      String
+  isOnline      Boolean        @default(true) @map("is_online")
+  lastPing      DateTime       @default(now()) @map("last_ping")
+  messages      Message[]      @relation("UserMessages")
+  userChannels  UserChannel[] @relation("UserToChannel")
+}
+
+model Channel {
+  id            String         @id @default(cuid())
+  createdAt     DateTime       @default(now()) @map("created_at")
+  name          String?        @unique
+  type          ChannelType
+  messages      Message[]
+  userChannels  UserChannel[]
+}
+
+model Message {
+  id          Int       @id @default(autoincrement())
+  content     String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  fromUser    User      @relation("UserMessages", fields: [fromUserId], references: [id])
+  fromUserId  String    @map("from_user")
+  channel     Channel   @relation(fields: [channelId], references: [id])
+  channelId   String    @map("channel_id")
+
+  @@index([fromUserId])
+  @@index([channelId])
+}
+
+model UserChannel {
+  user          User     @relation("UserToChannel", fields: [userId], references: [id])
+  userId        String   @map("user_id")
+  channel       Channel  @relation(fields: [channelId], references: [id])
+  channelId     String   @map("channel_id")
+  clientOffsetId Int? @map("client_offset")
+
+  @@id([userId, channelId])
+  @@index([userId, channelId])
+}
+
+enum ChannelType {
+  public
+  private
 }
