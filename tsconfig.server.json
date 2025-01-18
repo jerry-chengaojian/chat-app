@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext", // 更现代的模块系统
+    "outDir": "dist",
+    "lib": ["es2022"], // 更新到更新的 ECMAScript 版本
+    "target": "es2022", // 更新目标版本
+    "isolatedModules": false,
+    "noEmit": false,
+    "moduleResolution": "NodeNext" // 配合 module: NodeNext
+  },
+  "include": ["server.ts"]
+}
