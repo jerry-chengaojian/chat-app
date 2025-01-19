@@ -63,7 +63,7 @@ export default function ChatInterface() {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-[#e5f0f6] pt-12 pb-12 pl-36 pr-36">
-      <div className="flex w-full max-w-6xl h-[82vh] bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="flex w-full max-w-6xl h-[82vh] bg-white rounded-lg shadow-lg overflow-auto">
         {/* Left sidebar */}
         <div className="w-16 border-r border-gray-200 flex flex-col items-center py-4 bg-[#f5f5f5]">
           {/* Navigation buttons */}
@@ -72,33 +72,33 @@ export default function ChatInterface() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-12 h-12 rounded-xl bg-blue-50 hover:bg-blue-50"
+                className="w-8 h-8 rounded-xl bg-blue-50 hover:bg-blue-50"
               >
                 <MessageCircle className="h-6 w-6 text-blue-500" />
               </Button>
-              <span className="text-xs text-blue-500 mt-1">消息</span>
+              <span className="text-xs text-blue-500">消息</span>
             </div>
 
             <div className="flex flex-col items-center">
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-12 h-12 rounded-xl hover:bg-green-50"
+                className="w-8 h-8 rounded-xl hover:bg-green-50"
               >
                 <Users className="h-6 w-6 text-gray-500" />
               </Button>
-              <span className="text-xs text-gray-500 mt-1">好友</span>
+              <span className="text-xs text-gray-500">好友</span>
             </div>
 
             <div className="flex flex-col items-center">
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-12 h-12 rounded-xl hover:bg-purple-50"
+                className="w-8 h-8 rounded-xl hover:bg-purple-50"
               >
                 <Group className="h-6 w-6 text-gray-500" />
               </Button>
-              <span className="text-xs text-gray-500 mt-1">群组</span>
+              <span className="text-xs text-gray-500">群组</span>
             </div>
           </div>
         </div>
@@ -263,7 +263,7 @@ export default function ChatInterface() {
               />
             </div>
             <div className="text-xs text-gray-500 mt-2 flex justify-between items-center gap-2">
-              <div className="flex gap-2 mb-2">
+              <div className="flex mb-2">
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <Smile className="h-5 w-5" />
                 </Button>
