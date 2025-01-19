@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { LeftSidebar } from "@/components/chat/left-sidebar";
 import { ChatList } from "@/components/chat/chat-list";
 import { MessageList } from "@/components/chat/message-list";
 import { MessageInput } from "@/components/chat/message-input";
@@ -43,26 +42,23 @@ export default function ChatInterface() {
   ];
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-[#e5f0f6] pt-12 pb-12 pl-36 pr-36">
-      <div className="flex w-full max-w-6xl h-[82vh] bg-white rounded-lg shadow-lg overflow-auto">
-        <LeftSidebar />
-        <ChatList
-          selectedChatId={selectedChatId}
-          setSelectedChatId={setSelectedChatId}
-        />
+    <>
+      <ChatList
+        selectedChatId={selectedChatId}
+        setSelectedChatId={setSelectedChatId}
+      />
 
-        <div className="flex-1 flex flex-col">
-          <div className="h-14 border-b flex items-center justify-between px-6 bg-white">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-medium">静待下班</h2>
-              <span className="text-sm text-gray-500">当前在线人数: 4</span>
-            </div>
+      <div className="flex-1 flex flex-col">
+        <div className="h-14 border-b flex items-center justify-between px-6 bg-white">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-medium">静待下班</h2>
+            <span className="text-sm text-gray-500">当前在线人数: 4</span>
           </div>
-
-          <MessageList messages={messages} />
-          <MessageInput />
         </div>
+
+        <MessageList messages={messages} />
+        <MessageInput />
       </div>
-    </div>
+    </>
   );
 }
