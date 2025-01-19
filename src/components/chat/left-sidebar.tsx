@@ -1,9 +1,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useChatStore } from "@/store/chat-store";
 import { MessageCircle, Users, Group } from "lucide-react";
+import { useEffect } from "react";
 
 export function LeftSidebar() {
+  const { init, clear, bindEvents } = useChatStore();
+
+  useEffect(() => {
+    init();
+    bindEvents();
+    console.log("LeftSidebar mounted");
+    return () => {
+      console.log("LeftSidebar unmounted");
+      clear();
+    };
+  }, []);
+
   return (
     <div className="w-16 border-r border-gray-200 flex flex-col items-center py-4 bg-[#f5f5f5]">
       <div className="space-y-4 flex flex-col items-center">
