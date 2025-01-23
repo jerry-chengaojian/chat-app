@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { produce } from "immer";
 import { Channel, Message, User, ChannelType } from "@prisma/client";
 
 interface ChatMessage extends Message {
@@ -37,37 +38,37 @@ export const useChatStore = create<ChatStore>((set) => ({
   setChannels: (channels) => set({ channels }),
   setSelectedChannelId: (id) => set({ selectedChannelId: id }),
   addMessage: (message) => 
-    set((state) => ({ 
-      messages: [...state.messages, message] 
+    set(produce((state) => {
+      state.messages.push(message);
     })),
   setMessages: (messages) => set({ messages }),
   setHasMore: (hasMore) => set({ hasMore }),
   prependMessages: (messages) => 
-    set((state) => ({ 
-      messages: [...messages, ...state.messages]
+    set(produce((state) => {
+      state.messages.unshift(...messages);
     })),
   updateUnreadCount: (channelId, count) =>
-    set((state) => ({
-      channels: state.channels.map(channel =>
-        channel.id === channelId
-          ? { ...channel, unreadCount: count }
-          : channel
-      )
+    set(produce((state) => {
+      const channel = state.channels.find((c: ChatChannel) => c.id === channelId);
+      if (channel) {
+        channel.unreadCount = count;
+      }
     })),
   incrementUnreadCount: (channelId) =>
-    set((state) => ({
-      channels: state.channels.map(channel =>
-        channel.id === channelId && channel.id !== state.selectedChannelId
-          ? { ...channel, unreadCount: (channel.unreadCount || 0) + 1 }
-          : channel
-      )
+    set(produce((state) => {
+      const channel = state.channels.find((c: ChatChannel) => c.id === channelId);
+      if (channel && channel.id !== state.selectedChannelId) {
+        channel.unreadCount = (channel.unreadCount || 0) + 1;
+      }
     })),
   updateLatestMessage: (message) =>
-    set((state) => ({
-      channels: state.channels.map(channel =>
-        channel.id === message.channelId
-          ? { ...channel, latestMessage: { content: message.content, createdAt: message.createdAt } }
-          : channel
-      )
+    set(produce((state) => {
+      const channel = state.channels.find((c: ChatChannel) => c.id === message.channelId);
+      if (channel) {
+        channel.latestMessage = {
+          content: message.content,
+          createdAt: message.createdAt
+        };
+      }
     })),
 }));
