@@ -12,6 +12,7 @@ declare module "socket.io" {
 
 export class SocketService {
   private io: SocketServer;
+  private MESSAGES_LIMIT = 5; // Define a constant for message limit
 
   constructor(httpServer: HttpServer) {
     this.io = new SocketServer(httpServer);
@@ -152,12 +153,38 @@ export class SocketService {
             where: { channelId },
             include: { fromUser: { select: { username: true, id: true } } },
             orderBy: { createdAt: 'desc' },
-            take: 50,
+            take: this.MESSAGES_LIMIT,
           });
-          socket.emit('messages', messages.reverse());
+          socket.emit('messages', { 
+            messages: messages.reverse(),
+            hasMore: messages.length === this.MESSAGES_LIMIT
+          });
         } catch (error) {
           console.error('Error loading messages:', error);
           socket.emit('error', 'Failed to load messages');
+        }
+      });
+
+      // Handle loading more messages
+      socket.on('load_more_messages', async ({ channelId, beforeId }: { channelId: string, beforeId: number }) => {
+        try {
+          const messages = await prisma.message.findMany({
+            where: { 
+              channelId,
+              id: { lt: beforeId }
+            },
+            include: { fromUser: { select: { username: true, id: true } } },
+            orderBy: { createdAt: 'desc' },
+            take: this.MESSAGES_LIMIT,
+          });
+          
+          socket.emit('more_messages', { 
+            messages: messages.reverse(),
+            hasMore: messages.length === this.MESSAGES_LIMIT
+          });
+        } catch (error) {
+          console.error('Error loading more messages:', error);
+          socket.emit('error', 'Failed to load more messages');
         }
       });
 

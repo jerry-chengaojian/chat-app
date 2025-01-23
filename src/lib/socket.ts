@@ -21,8 +21,14 @@ socket.on("message", (message) => {
   useChatStore.getState().addMessage(message);
 });
 
-socket.on("messages", (messages) => {
+socket.on("messages", ({ messages, hasMore }) => {
   useChatStore.getState().setMessages(messages);
+  useChatStore.getState().setHasMore(hasMore);
+});
+
+socket.on("more_messages", ({ messages, hasMore }) => {
+  useChatStore.getState().prependMessages(messages);
+  useChatStore.getState().setHasMore(hasMore);
 });
 
 // Listen for channels from server
