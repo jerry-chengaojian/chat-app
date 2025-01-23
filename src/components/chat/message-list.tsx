@@ -5,10 +5,16 @@ import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import socket from "@/lib/socket";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 export function MessageList() {
-  const messages = useChatStore((state) => state.messages);
+  const messages = useChatStore(state => state.messages);
+  const currentChannelId = useChatStore(state => state.selectedChannelId);
+  const hasMore = useChatStore(state => state.hasMore);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
+  const isLoadingMore = useRef(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -16,8 +22,35 @@ export function MessageList() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    const handleScroll = async () => {
+      if (!scrollRef.current || isLoadingMore.current || !hasMore) return;
+
+      const { scrollTop } = scrollRef.current;
+      if (scrollTop === 0) {
+        isLoadingMore.current = true;
+        const oldestMessageId = messages[0]?.id;
+        socket.emit('load_more_messages', {
+          channelId: currentChannelId,
+          beforeId: oldestMessageId
+        });
+      }
+    };
+
+    const scrollElement = scrollRef.current;
+    scrollElement?.addEventListener('scroll', handleScroll);
+    return () => scrollElement?.removeEventListener('scroll', handleScroll);
+  }, [messages, currentChannelId, hasMore]);
+
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50 scrollbar-thin">
+      {!hasMore && (
+        <Alert className="mb-4">
+          <AlertDescription>
+            You've reached the beginning of the conversation
+          </AlertDescription>
+        </Alert>
+      )}
       <style jsx global>{`
         .scrollbar-thin::-webkit-scrollbar {
           width: 4px;
