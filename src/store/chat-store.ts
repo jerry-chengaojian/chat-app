@@ -5,17 +5,23 @@ interface ChatMessage extends Message {
   fromUser: User;
 }
 
+export interface ChatChannel extends Channel {
+  unreadCount: number
+}
+
 interface ChatStore {
-  channels: Channel[];
+  channels: ChatChannel[];
   selectedChannelId: string | null;
   messages: ChatMessage[];
   hasMore: boolean;
-  setChannels: (channels: Channel[]) => void;
+  setChannels: (channels: ChatChannel[]) => void;
   setSelectedChannelId: (id: string | null) => void;
   addMessage: (message: ChatMessage) => void;
   setMessages: (messages: ChatMessage[]) => void;
   setHasMore: (hasMore: boolean) => void;
   prependMessages: (messages: ChatMessage[]) => void;
+  updateUnreadCount: (channelId: string, count: number) => void;
+  incrementUnreadCount: (channelId: string) => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -34,5 +40,21 @@ export const useChatStore = create<ChatStore>((set) => ({
   prependMessages: (messages) => 
     set((state) => ({ 
       messages: [...messages, ...state.messages]
+    })),
+  updateUnreadCount: (channelId, count) =>
+    set((state) => ({
+      channels: state.channels.map(channel =>
+        channel.id === channelId
+          ? { ...channel, unreadCount: count }
+          : channel
+      )
+    })),
+  incrementUnreadCount: (channelId) =>
+    set((state) => ({
+      channels: state.channels.map(channel =>
+        channel.id === channelId && channel.id !== state.selectedChannelId
+          ? { ...channel, unreadCount: (channel.unreadCount || 0) + 1 }
+          : channel
+      )
     })),
 }));

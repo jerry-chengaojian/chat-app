@@ -1,8 +1,7 @@
 "use client";
 
 import { io } from "socket.io-client";
-import { useChatStore } from "@/store/chat-store";
-import { Channel } from "@prisma/client";
+import { ChatChannel, useChatStore } from "@/store/chat-store";
 
 export const socket = io({
   autoConnect: false,
@@ -19,6 +18,7 @@ socket.onAnyOutgoing((...args) => {
 
 socket.on("message", (message) => {
   useChatStore.getState().addMessage(message);
+  useChatStore.getState().incrementUnreadCount(message.channelId);
 });
 
 socket.on("messages", ({ messages, hasMore }) => {
@@ -32,7 +32,7 @@ socket.on("more_messages", ({ messages, hasMore }) => {
 });
 
 // Listen for channels from server
-socket.on('channels', (receivedChannels: Channel[]) => {
+socket.on('channels', (receivedChannels: ChatChannel[]) => {
   useChatStore.getState().setChannels(receivedChannels);
 });
 

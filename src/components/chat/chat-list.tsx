@@ -26,6 +26,7 @@ export function ChatList() {
   const handleChannelClick = (channelId: string) => {
     setSelectedChannelId(channelId);
     socket.emit("join_channel", channelId);
+    socket.emit("mark_channel_read", channelId);
   };
 
   return (
@@ -50,21 +51,28 @@ export function ChatList() {
               key={channel.id}
               onClick={() => handleChannelClick(channel.id)}
               className={cn(
-                "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200",
+                "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200 relative",
                 "hover:bg-gray-100",
                 selectedChannelId === channel.id ? "bg-blue-100 shadow-sm" : "bg-white"
               )}
             >
-              <Avatar className="h-10 w-10">
-                <AvatarImage
-                  src={undefined}
-                  alt={channel.name || "Channel"}
-                  className="object-cover"
-                />
-                <AvatarFallback>
-                  {channel.name?.slice(0, 2).toUpperCase() || "CH"}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage
+                    src={undefined}
+                    alt={channel.name || "Channel"}
+                    className="object-cover"
+                  />
+                  <AvatarFallback>
+                    {channel.name?.slice(0, 2).toUpperCase() || "CH"}
+                  </AvatarFallback>
+                </Avatar>
+                {channel.unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[1.25rem] h-5 flex items-center justify-center px-1">
+                    {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
+                  </div>
+                )}
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-sm">
