@@ -6,7 +6,11 @@ interface ChatMessage extends Message {
 }
 
 export interface ChatChannel extends Channel {
-  unreadCount: number
+  unreadCount: number;
+  latestMessage?: {
+    content: string;
+    createdAt: Date;
+  } | null;
 }
 
 interface ChatStore {
@@ -22,6 +26,7 @@ interface ChatStore {
   prependMessages: (messages: ChatMessage[]) => void;
   updateUnreadCount: (channelId: string, count: number) => void;
   incrementUnreadCount: (channelId: string) => void;
+  updateLatestMessage: (message: ChatMessage) => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -54,6 +59,14 @@ export const useChatStore = create<ChatStore>((set) => ({
       channels: state.channels.map(channel =>
         channel.id === channelId && channel.id !== state.selectedChannelId
           ? { ...channel, unreadCount: (channel.unreadCount || 0) + 1 }
+          : channel
+      )
+    })),
+  updateLatestMessage: (message) =>
+    set((state) => ({
+      channels: state.channels.map(channel =>
+        channel.id === message.channelId
+          ? { ...channel, latestMessage: { content: message.content, createdAt: message.createdAt } }
           : channel
       )
     })),

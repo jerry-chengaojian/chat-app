@@ -32,6 +32,7 @@ socket.on("message", (message) => {
     ];
     useChatStore.getState().setChannels(updatedChannels);
   }
+  useChatStore.getState().updateLatestMessage(message);
 });
 
 socket.on("messages", ({ messages, hasMore }) => {

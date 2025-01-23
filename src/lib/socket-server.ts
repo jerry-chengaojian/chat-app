@@ -80,6 +80,10 @@ export class SocketService {
     return Promise.all(
       userChannels.map(async (uc) => {
         const channel = uc.channel;
+        const message = await prisma.message.findFirst({
+          where: { channelId: channel.id },
+          orderBy: { createdAt: 'desc' }
+        });
         
         // Count unread messages
         const unreadCount = await prisma.message.count({
@@ -112,13 +116,21 @@ export class SocketService {
           return {
             ...channel,
             name: otherUser?.user.username || 'Unknown User',
-            unreadCount
+            unreadCount,
+            latestMessage: message ? {
+              content: message.content,
+              createdAt: message.createdAt
+            } : null
           };
         }
 
         return {
           ...channel,
-          unreadCount
+          unreadCount,
+          latestMessage: message ? {
+            content: message.content,
+            createdAt: message.createdAt
+          } : null
         };
       })
     );
