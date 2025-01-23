@@ -2,6 +2,7 @@
 
 import { io } from "socket.io-client";
 import { useChatStore } from "@/store/chat-store";
+import { Channel } from "@prisma/client";
 
 export const socket = io({
   autoConnect: false,
@@ -22,6 +23,11 @@ socket.on("message", (message) => {
 
 socket.on("messages", (messages) => {
   useChatStore.getState().setMessages(messages);
+});
+
+// Listen for channels from server
+socket.on('channels', (receivedChannels: Channel[]) => {
+  useChatStore.getState().setChannels(receivedChannels);
 });
 
 socket.on("error", (error) => {

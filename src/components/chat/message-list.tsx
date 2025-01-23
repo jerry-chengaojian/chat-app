@@ -9,7 +9,6 @@ export function MessageList() {
   const messages = useChatStore((state) => state.messages);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
-  const selectedChannelId = useChatStore((state) => state.selectedChannelId);
 
   useEffect(() => {
     if (scrollRef.current) {
