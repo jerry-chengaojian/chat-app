@@ -70,7 +70,8 @@ export class SocketService {
             type: true,
             createdAt: true
           }
-        },          
+        },
+        clientOffsetId: true // Add this to get the last read message ID
       },
       take: 10
     });
@@ -80,6 +81,16 @@ export class SocketService {
       userChannels.map(async (uc) => {
         const channel = uc.channel;
         
+        // Count unread messages
+        const unreadCount = await prisma.message.count({
+          where: {
+            channelId: channel.id,
+            id: {
+              gt: uc.clientOffsetId ?? 0 // If clientOffsetId is null, count all messages
+            }
+          }
+        });
+
         // For private channels, fetch the other user's name
         if (channel.type === ChannelType.private) {
           const otherUser = await prisma.userChannel.findFirst({
@@ -100,11 +111,15 @@ export class SocketService {
 
           return {
             ...channel,
-            name: otherUser?.user.username || 'Unknown User'
+            name: otherUser?.user.username || 'Unknown User',
+            unreadCount
           };
         }
 
-        return channel;
+        return {
+          ...channel,
+          unreadCount
+        };
       })
     );
   }
