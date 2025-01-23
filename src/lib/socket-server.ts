@@ -203,6 +203,36 @@ export class SocketService {
         }
       });
 
+      // Add mark_channel_read handler
+      socket.on('mark_channel_read', async (channelId: string) => {
+        try {
+          // Get the latest message ID for the channel
+          const latestMessage = await prisma.message.findFirst({
+            where: { channelId },
+            orderBy: { id: 'desc' },
+            select: { id: true }
+          });
+
+          if (latestMessage) {
+            // Update the clientOffsetId for the user-channel
+            await prisma.userChannel.update({
+              where: {
+                userId_channelId: {
+                  userId: socket.userId,
+                  channelId: channelId
+                }
+              },
+              data: {
+                clientOffsetId: latestMessage.id
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error marking channel as read:', error);
+          socket.emit('error', 'Failed to mark channel as read');
+        }
+      });
+
       // Handle disconnect
       socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.userId}`);

@@ -9,7 +9,7 @@ import { socket } from "@/lib/socket";
 import { format } from "date-fns";
 
 export function ChatList() {
-  const { channels, selectedChannelId, setSelectedChannelId } = useChatStore();
+  const { channels, selectedChannelId, setSelectedChannelId, updateUnreadCount } = useChatStore();
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -25,6 +25,7 @@ export function ChatList() {
 
   const handleChannelClick = (channelId: string) => {
     setSelectedChannelId(channelId);
+    updateUnreadCount(channelId, 0);
     socket.emit("join_channel", channelId);
     socket.emit("mark_channel_read", channelId);
   };
