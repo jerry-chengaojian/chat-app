@@ -14,7 +14,6 @@ export function MessageList() {
   const hasMore = useChatStore(state => state.hasMore);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
-  const isLoadingMore = useRef(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -24,11 +23,11 @@ export function MessageList() {
 
   useEffect(() => {
     const handleScroll = async () => {
-      if (!scrollRef.current || isLoadingMore.current || !hasMore) return;
+
+      if (!scrollRef.current || !hasMore) return;
 
       const { scrollTop } = scrollRef.current;
       if (scrollTop === 0) {
-        isLoadingMore.current = true;
         const oldestMessageId = messages[0]?.id;
         socket.emit('load_more_messages', {
           channelId: currentChannelId,
@@ -44,10 +43,10 @@ export function MessageList() {
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50 scrollbar-thin">
-      {!hasMore && (
+      {!hasMore && messages.length > 0 && ((scrollRef.current?.scrollHeight ?? 0) > (scrollRef.current?.clientHeight ?? 0)) && (
         <Alert className="mb-4">
           <AlertDescription>
-            You've reached the beginning of the conversation
+            以上是所有消息记录
           </AlertDescription>
         </Alert>
       )}
