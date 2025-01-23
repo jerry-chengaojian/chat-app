@@ -6,25 +6,18 @@ import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 import { useEffect, useState } from "react";
 import { socket } from "@/lib/socket";
-import { Channel } from "@prisma/client";
 import { format } from "date-fns";
 
 export function ChatList() {
-  const { channels, selectedChannelId, setChannels, setSelectedChannelId } = useChatStore();
+  const { channels, selectedChannelId, setSelectedChannelId } = useChatStore();
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     socket.connect();
-    // Listen for channels from server
-    socket.on('channels', (receivedChannels: Channel[]) => {
-      setChannels(receivedChannels);
-    });
-
     return () => {
-      socket.off('channels');
       socket.disconnect();
     };
-  }, [setChannels]);
+  }, []);
 
   const filteredChannels = channels.filter(channel => 
     channel.name?.toLowerCase().includes(searchQuery.toLowerCase())
