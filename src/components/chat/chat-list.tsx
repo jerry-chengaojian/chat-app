@@ -3,13 +3,31 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useChatStore } from "@/store/chat-store";
+import { useEffect, useState } from "react";
+import { socket } from "@/lib/socket";
+import { Channel } from "@prisma/client";
+import { format } from "date-fns";
 
-interface ChatListProps {
-  selectedChatId: string;
-  setSelectedChatId: (id: string) => void;
-}
+export function ChatList() {
+  const { channels, selectedChannelId, setChannels, setSelectedChannelId } = useChatStore();
+  const [searchQuery, setSearchQuery] = useState("");
 
-export function ChatList({ selectedChatId, setSelectedChatId }: ChatListProps) {
+  useEffect(() => {
+    // Listen for channels from server
+    socket.on('channels', (receivedChannels: Channel[]) => {
+      setChannels(receivedChannels);
+    });
+
+    return () => {
+      socket.off('channels');
+    };
+  }, [setChannels]);
+
+  const filteredChannels = channels.filter(channel => 
+    channel.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="w-64 border-r border-gray-200 flex flex-col">
       <div className="p-3">
@@ -18,6 +36,8 @@ export function ChatList({ selectedChatId, setSelectedChatId }: ChatListProps) {
           <input
             type="text"
             placeholder="搜索"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-[#f5f5f5] rounded-lg text-sm focus:outline-none"
           />
         </div>
@@ -25,33 +45,41 @@ export function ChatList({ selectedChatId, setSelectedChatId }: ChatListProps) {
 
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-1 p-2">
-          <div
-            onClick={() => setSelectedChatId("1")}
-            className={cn(
-              "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200",
-              "hover:bg-gray-100",
-              selectedChatId === "1" ? "bg-blue-100 shadow-sm" : "bg-white"
-            )}
-          >
-            <Avatar className="h-10 w-10">
-              <AvatarImage
-                src="/doraemon.jpg"
-                alt="System"
-                className="object-cover"
-              />
-              <AvatarFallback>SY</AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-sm">系统消息</span>
-                <span className="text-xs text-gray-500">01-16</span>
+          {filteredChannels.map((channel) => (
+            <div
+              key={channel.id}
+              onClick={() => setSelectedChannelId(channel.id)}
+              className={cn(
+                "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200",
+                "hover:bg-gray-100",
+                selectedChannelId === channel.id ? "bg-blue-100 shadow-sm" : "bg-white"
+              )}
+            >
+              <Avatar className="h-10 w-10">
+                <AvatarImage
+                  src={undefined}
+                  alt={channel.name || "Channel"}
+                  className="object-cover"
+                />
+                <AvatarFallback>
+                  {channel.name?.slice(0, 2).toUpperCase() || "CH"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">
+                    {channel.name || "Unnamed Channel"}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {format(new Date(channel.createdAt), "MM-dd")}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 truncate">
+                  {channel.type === "public" ? "Public Channel" : "Private Channel"}
+                </p>
               </div>
-              <p className="text-sm text-gray-500 truncate">
-                Welcome to the chat!
-              </p>
             </div>
-          </div>
-          {/* Additional chat items... */}
+          ))}
         </div>
       </div>
     </div>
