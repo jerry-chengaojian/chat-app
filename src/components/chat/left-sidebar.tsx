@@ -1,23 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useChatStore } from "@/store/chat-store";
-import { MessageCircle, Users, Group } from "lucide-react";
-import { useEffect } from "react";
+import { MessageCircle, Users, User } from "lucide-react";
 
 export function LeftSidebar() {
-  const { init, clear, bindEvents } = useChatStore();
-
-  useEffect(() => {
-    init();
-    bindEvents();
-    console.log("LeftSidebar mounted");
-    return () => {
-      console.log("LeftSidebar unmounted");
-      clear();
-    };
-  }, []);
-
   return (
     <div className="w-16 border-r border-gray-200 flex flex-col items-center py-4 bg-[#f5f5f5]">
       <div className="space-y-4 flex flex-col items-center">
@@ -49,9 +35,9 @@ export function LeftSidebar() {
             size="icon"
             className="w-8 h-8 rounded-xl hover:bg-purple-50"
           >
-            <Group className="h-6 w-6 text-gray-500" />
+            <User className="h-6 w-6 text-gray-500" />
           </Button>
-          <span className="text-xs text-gray-500">群组</span>
+          <span className="text-xs text-gray-500">个人</span>
         </div>
       </div>
     </div>

@@ -1,8 +1,10 @@
 "use client";
 
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 
-export const socket: Socket = io({ autoConnect: false });
+export const socket = io({
+  autoConnect: true,
+});
 
 // Debug: log all events
 socket.onAny((...args) => {
