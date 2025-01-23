@@ -113,6 +113,54 @@ export class SocketService {
       const flattenedChannels = await this.getUserChannels(socket.userId);
       socket.emit('channels', flattenedChannels);
 
+      // Join all user channels
+      for (const channel of flattenedChannels) {
+        socket.join(channel.id);
+      }
+
+      // Handle new messages
+      socket.on('message', async (data: { content: string; channelId: string }) => {
+        try {
+          const message = await prisma.message.create({
+            data: {
+              content: data.content,
+              fromUserId: socket.userId,
+              channelId: data.channelId,
+            },
+            include: {
+              fromUser: {
+                select: {
+                  username: true,
+                  id: true,
+                },
+              },
+            },
+          });
+
+          // Broadcast message to channel
+          this.io.to(data.channelId).emit('message', message);
+        } catch (error) {
+          console.error('Error saving message:', error);
+          socket.emit('error', 'Failed to send message');
+        }
+      });
+
+      // Load channel messages when selected
+      socket.on('join_channel', async (channelId: string) => {
+        try {
+          const messages = await prisma.message.findMany({
+            where: { channelId },
+            include: { fromUser: { select: { username: true, id: true } } },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+          });
+          socket.emit('messages', messages.reverse());
+        } catch (error) {
+          console.error('Error loading messages:', error);
+          socket.emit('error', 'Failed to load messages');
+        }
+      });
+
       // Handle disconnect
       socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.userId}`);
