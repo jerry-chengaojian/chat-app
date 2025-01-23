@@ -14,6 +14,7 @@ export function ChatList() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    socket.connect();
     // Listen for channels from server
     socket.on('channels', (receivedChannels: Channel[]) => {
       setChannels(receivedChannels);
@@ -21,12 +22,18 @@ export function ChatList() {
 
     return () => {
       socket.off('channels');
+      socket.disconnect();
     };
   }, [setChannels]);
 
   const filteredChannels = channels.filter(channel => 
     channel.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleChannelClick = (channelId: string) => {
+    setSelectedChannelId(channelId);
+    socket.emit("join_channel", channelId);
+  };
 
   return (
     <div className="w-64 border-r border-gray-200 flex flex-col">
@@ -48,7 +55,7 @@ export function ChatList() {
           {filteredChannels.map((channel) => (
             <div
               key={channel.id}
-              onClick={() => setSelectedChannelId(channel.id)}
+              onClick={() => handleChannelClick(channel.id)}
               className={cn(
                 "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200",
                 "hover:bg-gray-100",
