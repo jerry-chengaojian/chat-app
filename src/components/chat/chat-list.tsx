@@ -80,11 +80,15 @@ export function ChatList() {
                     {channel.name || "Unnamed Channel"}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {format(new Date(channel.createdAt), "MM-dd")}
+                    {
+                      channel.latestMessage && format(new Date(channel.latestMessage.createdAt), "MM-dd HH:mm")
+                    }
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 truncate">
-                  {channel.type === "public" ? "Public Channel" : "Private Channel"}
+                  {
+                    channel.latestMessage && channel.latestMessage.content
+                  }
                 </p>
               </div>
             </div>
