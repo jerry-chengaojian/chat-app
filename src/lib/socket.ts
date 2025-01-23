@@ -19,6 +19,19 @@ socket.onAnyOutgoing((...args) => {
 socket.on("message", (message) => {
   useChatStore.getState().addMessage(message);
   useChatStore.getState().incrementUnreadCount(message.channelId);
+  const channelId = useChatStore.getState().selectedChannelId;
+  channelId && socket.emit("mark_channel_read", channelId);
+  // Move the message's channel to the top of the list
+  const channels = useChatStore.getState().channels;
+  const channelIndex = channels.findIndex(c => c.id === message.channelId);
+  if (channelIndex > 0) {
+    const updatedChannels = [
+      channels[channelIndex],
+      ...channels.slice(0, channelIndex),
+      ...channels.slice(channelIndex + 1)
+    ];
+    useChatStore.getState().setChannels(updatedChannels);
+  }
 });
 
 socket.on("messages", ({ messages, hasMore }) => {
