@@ -5,10 +5,25 @@ import { MessageList } from "@/components/chat/message-list";
 import { MessageInput } from "@/components/chat/message-input";
 import { useChatStore } from "@/store/chat-store";
 import { ChannelType } from "@prisma/client";
+import { useEffect, useState } from "react";
+import socket from "@/lib/socket";
 
 export default function ChatInterface() {
-  const { selectedChannelId, channels } = useChatStore();
+  const { selectedChannelId, channels, users } = useChatStore();
   const channel = channels.find(channel => channel.id === selectedChannelId);
+  const [onlineCount, setOnlineCount] = useState(0);
+
+  useEffect(() => {
+    if (selectedChannelId) {
+      socket.emit('get_channel_user_ids', selectedChannelId, ({ userIds}: {userIds: string[]}) => {
+        const onlineUsers = userIds.filter(id => {
+          const user = users.get(id);
+          return user?.isOnline;
+        }).length;
+        setOnlineCount(onlineUsers);
+      });
+    }
+  }, [selectedChannelId, users]);
 
   return (
     <>
@@ -20,7 +35,7 @@ export default function ChatInterface() {
             <div className="h-14 border-b flex items-center justify-between px-6 bg-white">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-medium">{channel?.name}</h2>
-                {channel?.type == ChannelType.public && <span className="text-sm text-gray-500">当前在线人数: 4</span>}
+                {channel?.type == ChannelType.public && <span className="text-sm text-gray-500">当前在线人数: {onlineCount}</span>}
               </div>
             </div>
 

@@ -245,6 +245,25 @@ export class SocketService {
         }
       });
 
+      // Add handler for getting channel user IDs
+      socket.on('get_channel_user_ids', async (
+        channelId: string, 
+        callback: (response: { userIds?: string[], error?: string }) => void
+      ) => {
+        try {
+          const userChannels = await prisma.userChannel.findMany({
+            where: { channelId },
+            select: { userId: true }
+          });
+          
+          const userIds = userChannels.map(uc => uc.userId);
+          callback({ userIds });
+        } catch (error) {
+          console.error('Error fetching channel user IDs:', error);
+          callback({ error: 'Failed to fetch channel user IDs' });
+        }
+      });
+
       const users = await prisma.user.findMany({
         select: {
           id: true,
