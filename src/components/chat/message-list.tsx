@@ -13,11 +13,34 @@ export function MessageList() {
   const currentChannelId = useChatStore(state => state.selectedChannelId);
   const hasMore = useChatStore(state => state.hasMore);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevScrollHeightRef = useRef<number>(0);
   const { data: session } = useSession();
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const scrollElement = scrollRef.current;
+      const currentScrollHeight = scrollElement.scrollHeight;
+      const scrollDiff = currentScrollHeight - prevScrollHeightRef.current; // 新消息的高度
+      
+      // 检查用户是否在底部附近（允许50px的误差）
+      const isScrolledToBottom = 
+        prevScrollHeightRef.current - scrollElement.scrollTop - scrollElement.clientHeight < 50;
+
+      if (prevScrollHeightRef.current > 0) {
+        if (isScrolledToBottom) {
+          // 如果用户在底部，滚动到最新消息
+          scrollElement.scrollTop = currentScrollHeight;
+        } else {
+          // 如果用户在查看历史消息，保持当前查看位置
+          const distanceFromBottom = prevScrollHeightRef.current - scrollElement.scrollTop;
+          scrollElement.scrollTop = currentScrollHeight - distanceFromBottom - scrollDiff;
+        }
+      } else {
+        // 首次加载时滚动到底部
+        scrollElement.scrollTop = currentScrollHeight;
+      }
+      
+      prevScrollHeightRef.current = currentScrollHeight;
     }
   }, [messages]);
 
