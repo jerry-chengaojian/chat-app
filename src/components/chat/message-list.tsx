@@ -20,24 +20,25 @@ export function MessageList() {
     if (scrollRef.current) {
       const scrollElement = scrollRef.current;
       const currentScrollHeight = scrollElement.scrollHeight;
-      const scrollDiff = currentScrollHeight - prevScrollHeightRef.current; // 新消息的高度
       
-      // 检查用户是否在底部附近（允许50px的误差）
-      const isScrolledToBottom = 
-        prevScrollHeightRef.current - scrollElement.scrollTop - scrollElement.clientHeight < 50;
+      // Check if messages were added to the top (loading history)
+      const isLoadingHistory = messages.length > 0 && 
+        prevScrollHeightRef.current > 0 && 
+        messages[0]?.id !== messages[messages.length - 1]?.id;
 
-      if (prevScrollHeightRef.current > 0) {
-        if (isScrolledToBottom) {
-          // 如果用户在底部，滚动到最新消息
-          scrollElement.scrollTop = currentScrollHeight;
-        } else {
-          // 如果用户在查看历史消息，保持当前查看位置
-          const distanceFromBottom = prevScrollHeightRef.current - scrollElement.scrollTop;
-          scrollElement.scrollTop = currentScrollHeight - distanceFromBottom - scrollDiff;
-        }
+      if (isLoadingHistory) {
+        // When loading history, maintain the relative scroll position
+        const heightDiff = currentScrollHeight - prevScrollHeightRef.current;
+        scrollElement.scrollTop = scrollElement.scrollTop + heightDiff;
       } else {
-        // 首次加载时滚动到底部
-        scrollElement.scrollTop = currentScrollHeight;
+        // For new messages, check if user is near bottom
+        const isScrolledToBottom = 
+          scrollElement.scrollHeight - scrollElement.scrollTop - scrollElement.clientHeight < 50;
+
+        if (isScrolledToBottom || !prevScrollHeightRef.current) {
+          // Scroll to bottom for new messages if user was at bottom or on initial load
+          scrollElement.scrollTop = currentScrollHeight;
+        }
       }
       
       prevScrollHeightRef.current = currentScrollHeight;
