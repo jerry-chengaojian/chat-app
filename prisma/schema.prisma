@@ -12,7 +12,7 @@ model User {
   createdAt     DateTime       @default(now()) @map("created_at")
   username      String         @unique
   password      String
-  isOnline      Boolean        @default(true) @map("is_online")
+  isOnline      Boolean        @default(false) @map("is_online")
   lastPing      DateTime       @default(now()) @map("last_ping")
   messages      Message[]      @relation("UserMessages")
   userChannels  UserChannel[] @relation("UserToChannel")

@@ -245,8 +245,55 @@ export class SocketService {
         }
       });
 
+      const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          username: true, 
+          isOnline: true,
+          lastPing: true
+        },
+        orderBy: {
+          username: 'asc'
+        }
+      });
+      socket.emit('users', users);
+      socket.join(socket.userId);
+      // Update user's online status and last ping time
+      const user = await prisma.user.update({
+        where: { id: socket.userId },
+        data: {
+          isOnline: true,
+          lastPing: new Date()
+        },
+        select: {
+          id: true,
+          username: true,
+          isOnline: true,
+          lastPing: true,
+        }
+      });
+      this.io.emit("user", user);
+
       // Handle disconnect
-      socket.on('disconnect', () => {
+      socket.on('disconnect', async () => {
+        const matchingSockets = await this.io.in(socket.userId).fetchSockets();
+        const isDisconnected = matchingSockets.length === 0;
+
+        if (isDisconnected) {
+          // Update user connection status
+          const user = await prisma.user.update({
+            where: { id: socket.userId },
+            data: { isOnline: false },
+            select: {
+              id: true,
+              username: true,
+              isOnline: true,
+              lastPing: true,
+            }
+          });
+          console.log("user offline", user);
+          this.io.emit("user", user);
+        }
         console.log(`User disconnected: ${socket.userId}`);
       });
     } catch (error) {

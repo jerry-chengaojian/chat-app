@@ -1,6 +1,9 @@
 import { create } from "zustand";
-import { produce } from "immer";
+import { produce, enableMapSet } from "immer";
 import { Channel, Message, User, ChannelType } from "@prisma/client";
+
+// Enable the MapSet plugin
+enableMapSet();
 
 interface ChatMessage extends Message {
   fromUser: User;
@@ -19,6 +22,7 @@ interface ChatStore {
   selectedChannelId: string | null;
   messages: ChatMessage[];
   hasMore: boolean;
+  users: Map<string, User>;
   setChannels: (channels: ChatChannel[]) => void;
   setSelectedChannelId: (id: string | null) => void;
   addMessage: (message: ChatMessage) => void;
@@ -28,6 +32,8 @@ interface ChatStore {
   updateUnreadCount: (channelId: string, count: number) => void;
   incrementUnreadCount: (channelId: string) => void;
   updateLatestMessage: (message: ChatMessage) => void;
+  addUser: (user: User) => void;
+  setUsers: (users: User[]) => void;
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
@@ -35,6 +41,7 @@ export const useChatStore = create<ChatStore>((set) => ({
   selectedChannelId: null,
   messages: [],
   hasMore: true,
+  users: new Map(),
   setChannels: (channels) => set({ channels }),
   setSelectedChannelId: (id) => set({ selectedChannelId: id }),
   addMessage: (message) => 
@@ -71,4 +78,11 @@ export const useChatStore = create<ChatStore>((set) => ({
         };
       }
     })),
+  addUser: (user: User) => set(produce((state: ChatStore) => {
+    state.users.set(user.id, user);
+  })),
+  setUsers: (users: User[]) => set(produce((state: ChatStore) => {
+    state.users = new Map(users.map(user => [user.id, user]));
+  })),
 }));
+
