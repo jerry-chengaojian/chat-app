@@ -54,4 +54,12 @@ socket.on("error", (error) => {
   console.error("Socket error:", error);
 });
 
+socket.on("user", (user) => {
+  useChatStore.getState().addUser(user);
+});
+
+socket.on("users", (users) => {
+  useChatStore.getState().setUsers(users);
+});
+
 export default socket;
