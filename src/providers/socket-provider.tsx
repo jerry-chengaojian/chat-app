@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { useChatStore } from "@/store/chat-store";
-
+import { bindSocketEvents } from "@/lib/socket-event";
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const bindEvents = useChatStore((state) => state.bindEvents);
 
   useEffect(() => {
-    const cleanup = bindEvents();
+    const cleanup = bindSocketEvents();
     return cleanup;
-  }, [bindEvents]);
+  }, [bindSocketEvents]);
 
   return children;
 } 

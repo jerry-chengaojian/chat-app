@@ -2,16 +2,16 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { useChatStore } from "@/store/chat-store";
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
+import { useChannelStore } from "@/stores/channel-store";
+import { useMessageStore } from "@/stores/message-store";
 export function MessageList() {
-  const messages = useChatStore(state => state.messages);
-  const currentChannelId = useChatStore(state => state.selectedChannelId);
-  const hasMore = useChatStore(state => state.hasMore);
-  const loadMoreMessages = useChatStore(state => state.loadMoreMessages);
+  const messages = useMessageStore(state => state.messages);
+  const currentChannelId = useChannelStore(state => state.selectedChannelId);
+  const hasMore = useMessageStore(state => state.hasMore);
+  const loadMoreMessages = useMessageStore(state => state.loadMoreMessages);
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
   const { data: session } = useSession();
