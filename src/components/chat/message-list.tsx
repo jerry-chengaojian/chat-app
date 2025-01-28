@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import socket from "@/lib/socket";
+import socket from "@/lib/socket-client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function MessageList() {

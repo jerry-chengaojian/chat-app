@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Smile, Image, Paperclip, Send } from "lucide-react";
 import { useState, KeyboardEvent } from "react";
 import { useChatStore } from "@/store/chat-store";
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket-client";
 
 export function MessageInput() {
   const [content, setContent] = useState("");

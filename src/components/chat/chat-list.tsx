@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 import { useEffect, useState } from "react";
-import { socket } from "@/lib/socket";
+import { socket } from "@/lib/socket-client";
 import { format } from "date-fns";
 
 export function ChatList() {
