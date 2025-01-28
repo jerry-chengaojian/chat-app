@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { produce, enableMapSet } from "immer";
 import { Channel, Message, User, ChannelType } from "@prisma/client";
-import socket from "@/lib/socket";
+import socket from "@/lib/socket-client";
 
 // Enable the MapSet plugin
 enableMapSet();
@@ -38,6 +38,7 @@ interface ChatStore {
   handleChannelClick: (channelId: string) => void;
   loadMoreMessages: (channelId: string, beforeId: number) => void;
   sendMessage: (content: string, userId: string) => void;
+  bindEvents: () => () => void;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -140,6 +141,75 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         }
       }));
     });
+  },
+  bindEvents: () => {
+    // Debug: log all events
+    socket.onAny((...args) => {
+      console.log("incoming", args);
+    });
+
+    socket.onAnyOutgoing((...args) => {
+      console.log("outgoing", args);
+    });
+
+    socket.on("message", (message: ChatMessage) => {
+      set(produce((state: ChatStore) => {
+        state.messages.push(message);
+        const channel = state.channels.find(c => c.id === message.channelId);
+        if (channel && channel.id !== state.selectedChannelId) {
+          channel.unreadCount = (channel.unreadCount || 0) + 1;
+        }
+        // Move the message's channel to the top of the list
+        const channelIndex = state.channels.findIndex(c => c.id === message.channelId);
+        if (channelIndex > 0) {
+          const channelToMove = state.channels[channelIndex];
+          state.channels.splice(channelIndex, 1);
+          state.channels.unshift(channelToMove);
+        }
+        // Update latest message
+        const targetChannel = state.channels.find(c => c.id === message.channelId);
+        if (targetChannel) {
+          targetChannel.latestMessage = {
+            content: message.content,
+            createdAt: message.createdAt
+          };
+        }
+      }));
+      const channelId = get().selectedChannelId;
+      channelId && socket.emit("mark_channel_read", channelId);
+    });
+
+    socket.on('channels', (receivedChannels: ChatChannel[]) => {
+      set({ channels: receivedChannels });
+    });
+
+    socket.on("error", (error: Error) => {
+      console.error("Socket error:", error);
+    });
+
+    socket.on("user", (user: User) => {
+      set(produce((state) => {
+        state.users.set(user.id, user);
+      }));
+    });
+
+    socket.on("users", (users: User[]) => {
+      set(produce((state) => {
+        state.users = new Map(users.map(user => [user.id, user]));
+      }));
+    });
+
+    socket.connect();
+
+    // Return cleanup function
+    return () => {
+      socket.off('message');
+      socket.off('channels');
+      socket.off('error');
+      socket.off('user');
+      socket.off('users');
+      socket.disconnect();
+    };
   },
 }));
 

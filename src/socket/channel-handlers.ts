@@ -9,10 +9,7 @@ type ChannelResponse<T> = {
 
 export function createChannelHandlers(socket: Socket) {
   return {
-    handleMarkChannelRead: async (
-      channelId: string,
-      callback: (res: ChannelResponse<void>) => void
-    ) => {
+    handleMarkChannelRead: async (channelId: string) => {
       try {
         // Get the latest message ID for the channel
         const latestMessage = await prisma.message.findFirst({
@@ -35,10 +32,8 @@ export function createChannelHandlers(socket: Socket) {
             }
           });
         }
-        callback({ data: undefined });
       } catch (error) {
         console.error('Error marking channel as read:', error);
-        callback({ error: 'Failed to mark channel as read' });
       }
     },
 

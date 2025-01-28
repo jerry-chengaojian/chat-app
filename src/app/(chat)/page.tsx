@@ -6,7 +6,7 @@ import { MessageInput } from "@/components/chat/message-input";
 import { useChatStore } from "@/store/chat-store";
 import { ChannelType } from "@prisma/client";
 import { useEffect, useState } from "react";
-import socket from "@/lib/socket";
+import socket from "@/lib/socket-client";
 
 export default function ChatInterface() {
   const { selectedChannelId, channels, users } = useChatStore();
