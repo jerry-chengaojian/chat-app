@@ -5,11 +5,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Smile, Image, Paperclip, Send } from "lucide-react";
 import { useState, KeyboardEvent } from "react";
 import { useChatStore } from "@/store/chat-store";
-import { socket } from "@/lib/socket-client";
+import { useSession } from "next-auth/react";
 
 export function MessageInput() {
   const [content, setContent] = useState("");
   const selectedChannelId = useChatStore((state) => state.selectedChannelId);
+  const sendMessage = useChatStore((state) => state.sendMessage);
+  const { data: session } = useSession();
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.ctrlKey && !e.shiftKey) {
@@ -20,12 +22,7 @@ export function MessageInput() {
 
   const handleSend = () => {
     if (!content.trim() || !selectedChannelId) return;
-
-    socket.emit("message", {
-      content: content.trim(),
-      channelId: selectedChannelId,
-    });
-
+    sendMessage(content, session?.user.userId!);
     setContent("");
   };
 

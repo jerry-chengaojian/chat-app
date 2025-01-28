@@ -3,6 +3,9 @@ import { Server as HttpServer } from "node:http";
 import { getToken } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 import { ChannelType } from "@prisma/client";
+import { createMessageHandlers } from './message-handlers';
+import { createChannelHandlers } from './channel-handlers';
+
 declare module "socket.io" {
   interface Socket {
     username: string;
@@ -54,123 +57,18 @@ export function initializeSocketServer(httpServer: HttpServer) {
         socket.join(channel.id);
       }
 
-      // Handle new messages
-      socket.on('message', async (data: { content: string; channelId: string }) => {
-        try {
-          const message = await prisma.message.create({
-            data: {
-              content: data.content,
-              fromUserId: socket.userId,
-              channelId: data.channelId,
-            },
-            include: {
-              fromUser: {
-                select: {
-                  username: true,
-                  id: true,
-                },
-              },
-            },
-          });
+      // Initialize handlers
+      const messageHandlers = createMessageHandlers(socket);
+      const channelHandlers = createChannelHandlers(socket);
 
-          // Broadcast message to channel
-          io.to(data.channelId).emit('message', message);
-        } catch (error) {
-          console.error('Error saving message:', error);
-          socket.emit('error', 'Failed to send message');
-        }
-      });
+      // Register message event handlers
+      socket.on('message:send', messageHandlers.handleNewMessage);
+      socket.on('load_more_messages', messageHandlers.handleLoadMoreMessages);
 
-      // Load channel messages when selected
-      socket.on('join_channel', async (channelId: string) => {
-        try {
-          const messages = await prisma.message.findMany({
-            where: { channelId },
-            include: { fromUser: { select: { username: true, id: true } } },
-            orderBy: { createdAt: 'desc' },
-            take: MESSAGES_LIMIT,
-          });
-          socket.emit('messages', { 
-            messages: messages.reverse(),
-            hasMore: messages.length === MESSAGES_LIMIT
-          });
-        } catch (error) {
-          console.error('Error loading messages:', error);
-          socket.emit('error', 'Failed to load messages');
-        }
-      });
-
-      // Handle loading more messages
-      socket.on('load_more_messages', async ({ channelId, beforeId }: { channelId: string, beforeId: number }) => {
-        try {
-          const messages = await prisma.message.findMany({
-            where: { 
-              channelId,
-              id: { lt: beforeId }
-            },
-            include: { fromUser: { select: { username: true, id: true } } },
-            orderBy: { createdAt: 'desc' },
-            take: MESSAGES_LIMIT,
-          });
-          
-          socket.emit('more_messages', { 
-            messages: messages.reverse(),
-            hasMore: messages.length === MESSAGES_LIMIT
-          });
-        } catch (error) {
-          console.error('Error loading more messages:', error);
-          socket.emit('error', 'Failed to load more messages');
-        }
-      });
-
-      // Add mark_channel_read handler
-      socket.on('mark_channel_read', async (channelId: string) => {
-        try {
-          // Get the latest message ID for the channel
-          const latestMessage = await prisma.message.findFirst({
-            where: { channelId },
-            orderBy: { id: 'desc' },
-            select: { id: true }
-          });
-
-          if (latestMessage) {
-            // Update the clientOffsetId for the user-channel
-            await prisma.userChannel.update({
-              where: {
-                userId_channelId: {
-                  userId: socket.userId,
-                  channelId: channelId
-                }
-              },
-              data: {
-                clientOffsetId: latestMessage.id
-              }
-            });
-          }
-        } catch (error) {
-          console.error('Error marking channel as read:', error);
-          socket.emit('error', 'Failed to mark channel as read');
-        }
-      });
-
-      // Add handler for getting channel user IDs
-      socket.on('get_channel_user_ids', async (
-        channelId: string, 
-        callback: (response: { userIds?: string[], error?: string }) => void
-      ) => {
-        try {
-          const userChannels = await prisma.userChannel.findMany({
-            where: { channelId },
-            select: { userId: true }
-          });
-          
-          const userIds = userChannels.map(uc => uc.userId);
-          callback({ userIds });
-        } catch (error) {
-          console.error('Error fetching channel user IDs:', error);
-          callback({ error: 'Failed to fetch channel user IDs' });
-        }
-      });
+      // Register channel event handlers
+      socket.on('join_channel', channelHandlers.handleJoinChannel);
+      socket.on('mark_channel_read', channelHandlers.handleMarkChannelRead);
+      socket.on('get_channel_user_ids', channelHandlers.handleGetChannelUserIds);
 
       const users = await prisma.user.findMany({
         select: {

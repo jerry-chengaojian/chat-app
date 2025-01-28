@@ -5,13 +5,13 @@ import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import socket from "@/lib/socket-client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function MessageList() {
   const messages = useChatStore(state => state.messages);
   const currentChannelId = useChatStore(state => state.selectedChannelId);
   const hasMore = useChatStore(state => state.hasMore);
+  const loadMoreMessages = useChatStore(state => state.loadMoreMessages);
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevScrollHeightRef = useRef<number>(0);
   const { data: session } = useSession();
@@ -47,16 +47,12 @@ export function MessageList() {
 
   useEffect(() => {
     const handleScroll = async () => {
-
       if (!scrollRef.current || !hasMore) return;
 
       const { scrollTop } = scrollRef.current;
       if (scrollTop === 0) {
         const oldestMessageId = messages[0]?.id;
-        socket.emit('load_more_messages', {
-          channelId: currentChannelId,
-          beforeId: oldestMessageId
-        });
+        loadMoreMessages(currentChannelId!, oldestMessageId);
       }
     };
 

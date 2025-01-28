@@ -5,11 +5,11 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 import { useEffect, useState } from "react";
-import { socket } from "@/lib/socket-client";
+import { socket } from "@/lib/socket";
 import { format } from "date-fns";
 
 export function ChatList() {
-  const { channels, selectedChannelId, setSelectedChannelId, updateUnreadCount } = useChatStore();
+  const { channels, selectedChannelId, setSelectedChannelId, updateUnreadCount, handleChannelClick } = useChatStore();
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -22,13 +22,6 @@ export function ChatList() {
   const filteredChannels = channels.filter(channel => 
     channel.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleChannelClick = (channelId: string) => {
-    setSelectedChannelId(channelId);
-    updateUnreadCount(channelId, 0);
-    socket.emit("join_channel", channelId);
-    socket.emit("mark_channel_read", channelId);
-  };
 
   return (
     <div className="w-64 border-r border-gray-200 flex flex-col">
