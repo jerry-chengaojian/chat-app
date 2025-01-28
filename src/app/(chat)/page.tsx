@@ -3,12 +3,14 @@
 import { ChatList } from "@/components/chat/chat-list";
 import { MessageList } from "@/components/chat/message-list";
 import { MessageInput } from "@/components/chat/message-input";
-import { useChatStore } from "@/store/chat-store";
 import { ChannelType } from "@prisma/client";
+import { useChannelStore } from "@/stores/channel-store";
+import { useUserStore } from "@/stores/user-store";
 
 export default function ChatInterface() {
-  const { selectedChannelId, channels, onlineCount } = useChatStore();
-  const channel = channels.find(channel => channel.id === selectedChannelId);
+  const selectedChannelId = useChannelStore((state) => state.selectedChannelId);
+  const onlineCount = useUserStore((state) => state.onlineCount);
+  const channel = useChannelStore((state) => state.channels).find(channel => channel.id === selectedChannelId);
 
   return (
     <>

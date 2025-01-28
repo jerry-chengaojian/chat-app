@@ -3,13 +3,16 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useChatStore } from "@/store/chat-store";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { useChannelStore } from "@/stores/channel-store";
 
 export function ChatList() {
-  const { channels, selectedChannelId, setSelectedChannelId, updateUnreadCount, handleChannelClick } = useChatStore();
   const [searchQuery, setSearchQuery] = useState("");
+  const channels = useChannelStore((state) => state.channels);
+  const selectedChannelId = useChannelStore((state) => state.selectedChannelId);
+  const { handleChannelClick } = useChannelStore();
+
 
   const filteredChannels = channels.filter(channel => 
     channel.name?.toLowerCase().includes(searchQuery.toLowerCase())

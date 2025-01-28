@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Smile, Image, Paperclip, Send } from "lucide-react";
 import { useState, KeyboardEvent } from "react";
-import { useChatStore } from "@/store/chat-store";
 import { useSession } from "next-auth/react";
+import { useChannelStore } from "@/stores/channel-store";
+import { useMessageStore } from "@/stores/message-store";
 
 export function MessageInput() {
   const [content, setContent] = useState("");
-  const selectedChannelId = useChatStore((state) => state.selectedChannelId);
-  const sendMessage = useChatStore((state) => state.sendMessage);
+  const selectedChannelId = useChannelStore((state) => state.selectedChannelId);
+  const sendMessage = useMessageStore((state) => state.sendMessage);
   const { data: session } = useSession();
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -22,7 +23,7 @@ export function MessageInput() {
 
   const handleSend = () => {
     if (!content.trim() || !selectedChannelId) return;
-    sendMessage(content, session?.user.userId!);
+    sendMessage(content, session?.user.userId!, selectedChannelId);
     setContent("");
   };
 
