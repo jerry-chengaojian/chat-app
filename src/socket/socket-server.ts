@@ -10,30 +10,21 @@ declare module "socket.io" {
   }
 }
 
-export class SocketService {
-  private io: SocketServer;
-  private MESSAGES_LIMIT = 5; // Define a constant for message limit
+const MESSAGES_LIMIT = 5;
 
-  constructor(httpServer: HttpServer) {
-    this.io = new SocketServer(httpServer);
-    this.init();
-  }
+export function initializeSocketServer(httpServer: HttpServer) {
+  const io = new SocketServer(httpServer);
 
-  private init() {
-    this.io.use((socket: Socket, next) => {
-      socket.onAny((...args) => {
-        console.log("incoming", args);
-      });
-
-      socket.onAnyOutgoing((...args) => {
-        console.log("outgoing", args);
-      });
-      return this.authMiddleware(socket, next);
+  // Auth middleware
+  io.use(async (socket: Socket, next) => {
+    socket.onAny((...args) => {
+      console.log("incoming", args);
     });
-    this.io.on("connection", (socket) => this.handleConnection(socket));
-  }
 
-  private async authMiddleware(socket: Socket, next: (err?: Error) => void) {
+    socket.onAnyOutgoing((...args) => {
+      console.log("outgoing", args);
+    });
+
     try {
       const headers = Object.fromEntries(
         Object.entries(socket.request.headers).map(([key, value]) => [
@@ -51,94 +42,11 @@ export class SocketService {
     } catch (error) {
       next(error as Error);
     }
-  }
-  
-  private async getUserChannels(userId: string) {
-    // Fetch user's channels with flattened structure
-    const userChannels = await prisma.userChannel.findMany({
-      where: {
-        userId: userId
-      },
-      orderBy: {
-        clientOffsetId: 'desc'
-      },
-      select: {
-        channel: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            createdAt: true
-          }
-        },
-        clientOffsetId: true // Add this to get the last read message ID
-      },
-      take: 10
-    });
+  });
 
-    // Transform and process channels
-    return Promise.all(
-      userChannels.map(async (uc) => {
-        const channel = uc.channel;
-        const message = await prisma.message.findFirst({
-          where: { channelId: channel.id },
-          orderBy: { createdAt: 'desc' }
-        });
-        
-        // Count unread messages
-        const unreadCount = await prisma.message.count({
-          where: {
-            channelId: channel.id,
-            id: {
-              gt: uc.clientOffsetId ?? 0 // If clientOffsetId is null, count all messages
-            }
-          }
-        });
-
-        // For private channels, fetch the other user's name
-        if (channel.type === ChannelType.private) {
-          const otherUser = await prisma.userChannel.findFirst({
-            where: {
-              channelId: channel.id,
-              userId: {
-                not: userId
-              }
-            },
-            select: {
-              user: {
-                select: {
-                  username: true
-                }
-              }
-            }
-          });
-
-          return {
-            ...channel,
-            name: otherUser?.user.username || 'Unknown User',
-            unreadCount,
-            latestMessage: message ? {
-              content: message.content,
-              createdAt: message.createdAt
-            } : null
-          };
-        }
-
-        return {
-          ...channel,
-          unreadCount,
-          latestMessage: message ? {
-            content: message.content,
-            createdAt: message.createdAt
-          } : null
-        };
-      })
-    );
-  }
-
-  private async handleConnection(socket: Socket) {
+  io.on("connection", async (socket) => {
     try {
-      const flattenedChannels = await this.getUserChannels(socket.userId);
+      const flattenedChannels = await getUserChannels(socket.userId);
       socket.emit('channels', flattenedChannels);
 
       // Join all user channels
@@ -166,7 +74,7 @@ export class SocketService {
           });
 
           // Broadcast message to channel
-          this.io.to(data.channelId).emit('message', message);
+          io.to(data.channelId).emit('message', message);
         } catch (error) {
           console.error('Error saving message:', error);
           socket.emit('error', 'Failed to send message');
@@ -180,11 +88,11 @@ export class SocketService {
             where: { channelId },
             include: { fromUser: { select: { username: true, id: true } } },
             orderBy: { createdAt: 'desc' },
-            take: this.MESSAGES_LIMIT,
+            take: MESSAGES_LIMIT,
           });
           socket.emit('messages', { 
             messages: messages.reverse(),
-            hasMore: messages.length === this.MESSAGES_LIMIT
+            hasMore: messages.length === MESSAGES_LIMIT
           });
         } catch (error) {
           console.error('Error loading messages:', error);
@@ -202,12 +110,12 @@ export class SocketService {
             },
             include: { fromUser: { select: { username: true, id: true } } },
             orderBy: { createdAt: 'desc' },
-            take: this.MESSAGES_LIMIT,
+            take: MESSAGES_LIMIT,
           });
           
           socket.emit('more_messages', { 
             messages: messages.reverse(),
-            hasMore: messages.length === this.MESSAGES_LIMIT
+            hasMore: messages.length === MESSAGES_LIMIT
           });
         } catch (error) {
           console.error('Error loading more messages:', error);
@@ -291,11 +199,11 @@ export class SocketService {
           lastPing: true,
         }
       });
-      this.io.emit("user", user);
+      io.emit("user", user);
 
       // Handle disconnect
       socket.on('disconnect', async () => {
-        const matchingSockets = await this.io.in(socket.userId).fetchSockets();
+        const matchingSockets = await io.in(socket.userId).fetchSockets();
         const isDisconnected = matchingSockets.length === 0;
 
         if (isDisconnected) {
@@ -311,7 +219,7 @@ export class SocketService {
             }
           });
           console.log("user offline", user);
-          this.io.emit("user", user);
+          io.emit("user", user);
         }
         console.log(`User disconnected: ${socket.userId}`);
       });
@@ -319,5 +227,90 @@ export class SocketService {
       console.error('Error handling connection:', error);
       socket.disconnect();
     }
-  }
+  });
+
+  return io;
+}
+
+async function getUserChannels(userId: string) {
+  // Fetch user's channels with flattened structure
+  const userChannels = await prisma.userChannel.findMany({
+    where: {
+      userId: userId
+    },
+    orderBy: {
+      clientOffsetId: 'desc'
+    },
+    select: {
+      channel: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          createdAt: true
+        }
+      },
+      clientOffsetId: true // Add this to get the last read message ID
+    },
+    take: 10
+  });
+
+  // Transform and process channels
+  return Promise.all(
+    userChannels.map(async (uc) => {
+      const channel = uc.channel;
+      const message = await prisma.message.findFirst({
+        where: { channelId: channel.id },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      // Count unread messages
+      const unreadCount = await prisma.message.count({
+        where: {
+          channelId: channel.id,
+          id: {
+            gt: uc.clientOffsetId ?? 0 // If clientOffsetId is null, count all messages
+          }
+        }
+      });
+
+      // For private channels, fetch the other user's name
+      if (channel.type === ChannelType.private) {
+        const otherUser = await prisma.userChannel.findFirst({
+          where: {
+            channelId: channel.id,
+            userId: {
+              not: userId
+            }
+          },
+          select: {
+            user: {
+              select: {
+                username: true
+              }
+            }
+          }
+        });
+
+        return {
+          ...channel,
+          name: otherUser?.user.username || 'Unknown User',
+          unreadCount,
+          latestMessage: message ? {
+            content: message.content,
+            createdAt: message.createdAt
+          } : null
+        };
+      }
+
+      return {
+        ...channel,
+        unreadCount,
+        latestMessage: message ? {
+          content: message.content,
+          createdAt: message.createdAt
+        } : null
+      };
+    })
+  );
 }
