@@ -5,25 +5,10 @@ import { MessageList } from "@/components/chat/message-list";
 import { MessageInput } from "@/components/chat/message-input";
 import { useChatStore } from "@/store/chat-store";
 import { ChannelType } from "@prisma/client";
-import { useEffect, useState } from "react";
-import socket from "@/lib/socket-client";
 
 export default function ChatInterface() {
-  const { selectedChannelId, channels, users } = useChatStore();
+  const { selectedChannelId, channels, onlineCount } = useChatStore();
   const channel = channels.find(channel => channel.id === selectedChannelId);
-  const [onlineCount, setOnlineCount] = useState(0);
-
-  useEffect(() => {
-    if (selectedChannelId) {
-      socket.emit('get_channel_user_ids', selectedChannelId, ({ data: userIds}: {data: string[]}) => {
-        const onlineUsers = userIds.filter(id => {
-          const user = users.get(id);
-          return user?.isOnline;
-        }).length;
-        setOnlineCount(onlineUsers);
-      });
-    }
-  }, [selectedChannelId, users]);
 
   return (
     <>

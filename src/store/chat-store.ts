@@ -24,6 +24,9 @@ interface ChatStore {
   messages: ChatMessage[];
   hasMore: boolean;
   users: Map<string, User>;
+  onlineCount: number;
+  setOnlineCount: (count: number) => void;
+  updateOnlineCount: (channelId: string) => void;
   setChannels: (channels: ChatChannel[]) => void;
   setSelectedChannelId: (id: string | null) => void;
   addMessage: (message: ChatMessage) => void;
@@ -47,6 +50,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   messages: [],
   hasMore: true,
   users: new Map(),
+  onlineCount: 0,
+  setOnlineCount: (count) => set({ onlineCount: count }),
+  updateOnlineCount: (channelId) => {
+    socket.emit('get_channel_user_ids', channelId, ({ data: userIds}: {data: string[]}) => {
+      const onlineUsers = userIds.filter(id => {
+        const user = get().users.get(id);
+        return user?.isOnline;
+      }).length;
+      set({ onlineCount: onlineUsers });
+    });
+  },
   setChannels: (channels) => set({ channels }),
   setSelectedChannelId: (id) => set({ selectedChannelId: id }),
   addMessage: (message) => 
@@ -99,6 +113,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }))
     socket.emit("join_channel", channelId, ({ data }: { data: {messages: ChatMessage[], hasMore: boolean} }) => {
       set({ messages: data.messages, hasMore: data.hasMore });
+      get().updateOnlineCount(channelId);
     });
     socket.emit("mark_channel_read", channelId);
   },
@@ -187,15 +202,23 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       console.error("Socket error:", error);
     });
 
-    socket.on("user", (user: User) => {
-      set(produce((state) => {
-        state.users.set(user.id, user);
-      }));
-    });
-
     socket.on("users", (users: User[]) => {
       set(produce((state) => {
         state.users = new Map(users.map(user => [user.id, user]));
+        const selectedChannelId = state.selectedChannelId;
+        if (selectedChannelId) {
+          get().updateOnlineCount(selectedChannelId);
+        }
+      }));
+    });
+
+    socket.on("user", (user: User) => {
+      set(produce((state) => {
+        state.users.set(user.id, user);
+        const selectedChannelId = state.selectedChannelId;
+        if (selectedChannelId) {
+          get().updateOnlineCount(selectedChannelId);
+        }
       }));
     });
 
