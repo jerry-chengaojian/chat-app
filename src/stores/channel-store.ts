@@ -3,6 +3,7 @@ import { produce } from "immer";
 import { Channel } from "@prisma/client";
 import socket from "@/lib/socket-client";
 import { ChatMessage, useMessageStore } from "./message-store";
+import { useUserStore } from "./user-store";
 
 export interface ChatChannel extends Channel {
   unreadCount: number;
@@ -57,7 +58,7 @@ export const useChannelStore = create<ChannelStore>((set, get) => ({
         channel.unreadCount = 0;
       }
     }));
-    
+    useUserStore.getState().updateOnlineCount(channelId);
     socket.emit("join_channel", channelId, ({ data }: { data: { messages: ChatMessage[], hasMore: boolean } }) => {
       useMessageStore.getState().setMessages(data.messages);
       useMessageStore.getState().setHasMore(data.hasMore);

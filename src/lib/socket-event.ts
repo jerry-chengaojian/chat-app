@@ -15,7 +15,9 @@ export const bindSocketEvents = () => {
 
   // Message events
   socket.on("message", (message) => {
-    useMessageStore.getState().addMessage(message);
+    if (message.channelId === useChannelStore.getState().selectedChannelId) {
+      useMessageStore.getState().addMessage(message);
+    }
     useChannelStore.getState().incrementUnreadCount(message.channelId);
     useChannelStore.getState().updateLatestMessage(
       message.channelId,
