@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Smile, Image, Paperclip, Send } from "lucide-react";
+import { Smile, Image as ImageIcon, Paperclip, Send } from "lucide-react";
 import { useState, KeyboardEvent } from "react";
 import { useSession } from "next-auth/react";
 import { useChannelStore } from "@/stores/channel-store";
@@ -23,7 +23,7 @@ export function MessageInput() {
 
   const handleSend = () => {
     if (!content.trim() || !selectedChannelId) return;
-    sendMessage(content, session?.user.userId!, selectedChannelId);
+    sendMessage(content, session!.user.userId!, selectedChannelId);
     setContent("");
   };
 
@@ -44,7 +44,7 @@ export function MessageInput() {
             <Smile className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Image className="h-5 w-5" />
+            <ImageIcon className="h-5 w-5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8">
             <Paperclip className="h-5 w-5" />
@@ -52,7 +52,7 @@ export function MessageInput() {
         </div>
         <div className="flex gap-2 items-center">
           <div>Ctrl+Enter: 换行 | Enter: 发送</div>
-          <Button 
+          <Button
             className="bg-blue-500 hover:bg-blue-600"
             onClick={handleSend}
             disabled={!content.trim() || !selectedChannelId}
