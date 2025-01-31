@@ -1,10 +1,15 @@
 import { Server as SocketServer, Socket } from "socket.io";
 import { Server as HttpServer } from "node:http";
-import { getToken } from "next-auth/jwt";
-import { createMessageHandlers } from './message-handlers';
-import { createChannelHandlers } from './channel-handlers';
-import { createUserHandlers } from './user-handlers';
-import { CHANNEL_GET_USER_IDS, CHANNEL_JOIN, CHANNEL_MARK_READ, MESSAGE_LOAD_MORE, MESSAGE_SEND } from "@/config/constants";
+import { createMessageHandlers } from "./message-handlers";
+import { createChannelHandlers } from "./channel-handlers";
+import { createUserHandlers } from "./user-handlers";
+import {
+  CHANNEL_GET_USER_IDS,
+  CHANNEL_JOIN,
+  CHANNEL_MARK_READ,
+  MESSAGE_LOAD_MORE,
+  MESSAGE_SEND,
+} from "../config/constants";
 
 declare module "socket.io" {
   interface Socket {
@@ -33,6 +38,7 @@ export function initializeSocketServer(httpServer: HttpServer) {
           String(value),
         ])
       );
+      const { getToken } = await import("next-auth/jwt");
       const token = (await getToken({
         req: { headers },
         secret: process.env.AUTH_SECRET,
@@ -54,7 +60,7 @@ export function initializeSocketServer(httpServer: HttpServer) {
 
       // Join user channels and emit channels data
       await channelHandlers.handleInitialChannels();
-      
+
       // Handle initial user data and status
       await userHandlers.handleInitialUsers();
 
@@ -68,9 +74,9 @@ export function initializeSocketServer(httpServer: HttpServer) {
       socket.on(CHANNEL_GET_USER_IDS, channelHandlers.handleGetChannelUserIds);
 
       // Handle disconnect
-      socket.on('disconnect', userHandlers.handleDisconnect);
+      socket.on("disconnect", userHandlers.handleDisconnect);
     } catch (error) {
-      console.error('Error handling connection:', error);
+      console.error("Error handling connection:", error);
       socket.disconnect();
     }
   });

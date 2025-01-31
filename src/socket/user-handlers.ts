@@ -1,6 +1,6 @@
 import { Socket, Server } from "socket.io";
-import { prisma } from "@/lib/prisma";
-import { USER_LIST, USER_UPDATE } from "@/config/constants";
+import { prisma } from "../lib/prisma";
+import { USER_LIST, USER_UPDATE } from "../config/constants";
 
 export function createUserHandlers(socket: Socket, io: Server) {
   return {

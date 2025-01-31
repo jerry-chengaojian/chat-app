@@ -59,7 +59,7 @@ export function MessageList() {
     const scrollElement = scrollRef.current;
     scrollElement?.addEventListener('scroll', handleScroll);
     return () => scrollElement?.removeEventListener('scroll', handleScroll);
-  }, [messages, currentChannelId, hasMore]);
+  }, [messages, currentChannelId, hasMore, loadMoreMessages]);
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50 scrollbar-thin">

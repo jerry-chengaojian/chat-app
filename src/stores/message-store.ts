@@ -6,7 +6,7 @@ import { useUserStore } from "./user-store";
 import { MESSAGE_SEND, MESSAGE_LOAD_MORE } from "@/config/constants";
 
 export interface ChatMessage extends Message {
-  fromUser: User;
+  fromUser: Omit<User, "password">;
 }
 
 interface MessageStore {

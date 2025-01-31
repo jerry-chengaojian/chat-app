@@ -1,8 +1,9 @@
 import { Socket } from "socket.io";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../lib/prisma";
 import { MessageResponse } from "./message-handlers";
 import { ChannelType } from "@prisma/client";
-import { CHANNEL_LIST, MESSAGES_LIMIT } from "@/config/constants";
+import { CHANNEL_LIST, MESSAGES_LIMIT } from "../config/constants";
+import { ChatMessage } from "@/stores/message-store";
 
 type ChannelResponse<T> = {
   data?: T;
@@ -20,10 +21,10 @@ export function createChannelHandlers(socket: Socket) {
         for (const channel of flattenedChannels) {
           socket.join(channel.id);
         }
-        
+
         return flattenedChannels; // 返回channels数据以便需要时重用
       } catch (error) {
-        console.error('Error handling initial channels:', error);
+        console.error("Error handling initial channels:", error);
         return [];
       }
     },
@@ -32,8 +33,8 @@ export function createChannelHandlers(socket: Socket) {
         // Get the latest message ID for the channel
         const latestMessage = await prisma.message.findFirst({
           where: { channelId },
-          orderBy: { id: 'desc' },
-          select: { id: true }
+          orderBy: { id: "desc" },
+          select: { id: true },
         });
 
         if (latestMessage) {
@@ -42,40 +43,42 @@ export function createChannelHandlers(socket: Socket) {
             where: {
               userId_channelId: {
                 userId: socket.userId,
-                channelId: channelId
-              }
+                channelId: channelId,
+              },
             },
             data: {
-              clientOffsetId: latestMessage.id
-            }
+              clientOffsetId: latestMessage.id,
+            },
           });
         }
       } catch (error) {
-        console.error('Error marking channel as read:', error);
+        console.error("Error marking channel as read:", error);
       }
     },
 
-     handleJoinChannel: async (
+    handleJoinChannel: async (
       channelId: string,
-      callback: (res: MessageResponse<any>) => void
+      callback: (
+        res: MessageResponse<{ messages: ChatMessage[]; hasMore: boolean }>
+      ) => void
     ) => {
       try {
         const messages = await prisma.message.findMany({
           where: { channelId },
           include: { fromUser: { select: { username: true, id: true } } },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           take: MESSAGES_LIMIT,
         });
-        
-        callback({ 
+
+        callback({
           data: {
-            messages: messages.reverse(),
-            hasMore: messages.length === MESSAGES_LIMIT
-          }
+            messages: messages.reverse() as ChatMessage[],
+            hasMore: messages.length === MESSAGES_LIMIT,
+          },
         });
       } catch (error) {
-        console.error('Error loading messages:', error);
-        callback({ error: 'Failed to load messages' });
+        console.error("Error loading messages:", error);
+        callback({ error: "Failed to load messages" });
       }
     },
 
@@ -86,16 +89,16 @@ export function createChannelHandlers(socket: Socket) {
       try {
         const userChannels = await prisma.userChannel.findMany({
           where: { channelId },
-          select: { userId: true }
+          select: { userId: true },
         });
-        
-        const userIds = userChannels.map(uc => uc.userId);
+
+        const userIds = userChannels.map((uc) => uc.userId);
         callback({ data: userIds });
       } catch (error) {
-        console.error('Error fetching channel user IDs:', error);
-        callback({ error: 'Failed to fetch channel user IDs' });
+        console.error("Error fetching channel user IDs:", error);
+        callback({ error: "Failed to fetch channel user IDs" });
       }
-    }
+    },
   };
 } 
 
