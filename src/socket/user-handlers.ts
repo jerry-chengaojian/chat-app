@@ -1,5 +1,6 @@
 import { Socket, Server } from "socket.io";
 import { prisma } from "@/lib/prisma";
+import { USER_LIST, USER_UPDATE } from "@/config/constants";
 
 export function createUserHandlers(socket: Socket, io: Server) {
   return {
@@ -32,8 +33,8 @@ export function createUserHandlers(socket: Socket, io: Server) {
             username: 'asc'
           }
         });
-        socket.emit('users', users);
-        socket.broadcast.emit("user", user);
+        socket.emit(USER_LIST, users);
+        socket.broadcast.emit(USER_UPDATE, user);
         
         // Join user's own room
         socket.join(socket.userId);
@@ -61,7 +62,7 @@ export function createUserHandlers(socket: Socket, io: Server) {
             }
           });
           console.log("user offline", user);
-          socket.broadcast.emit("user", user);
+          socket.broadcast.emit(USER_UPDATE, user);
         }
         console.log(`User disconnected: ${socket.userId}`);
       } catch (error) {

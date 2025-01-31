@@ -2,7 +2,7 @@ import { Socket } from "socket.io";
 import { prisma } from "@/lib/prisma";
 import { MessageResponse } from "./message-handlers";
 import { ChannelType } from "@prisma/client";
-import { MESSAGES_LIMIT } from "@/config/constants";
+import { CHANNEL_LIST, MESSAGES_LIMIT } from "@/config/constants";
 
 type ChannelResponse<T> = {
   data?: T;
@@ -14,7 +14,7 @@ export function createChannelHandlers(socket: Socket) {
     handleInitialChannels: async () => {
       try {
         const flattenedChannels = await getUserChannels(socket.userId);
-        socket.emit('channels', flattenedChannels);
+        socket.emit(CHANNEL_LIST, flattenedChannels);
 
         // Join all user channels
         for (const channel of flattenedChannels) {
