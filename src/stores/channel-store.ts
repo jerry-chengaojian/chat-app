@@ -4,6 +4,7 @@ import { Channel } from "@prisma/client";
 import socket from "@/lib/socket-client";
 import { ChatMessage, useMessageStore } from "./message-store";
 import { useUserStore } from "./user-store";
+import { CHANNEL_JOIN, CHANNEL_MARK_READ } from "@/config/constants";
 
 export interface ChatChannel extends Channel {
   unreadCount: number;
@@ -59,10 +60,10 @@ export const useChannelStore = create<ChannelStore>((set, get) => ({
       }
     }));
     useUserStore.getState().updateOnlineCount(channelId);
-    socket.emit("join_channel", channelId, ({ data }: { data: { messages: ChatMessage[], hasMore: boolean } }) => {
+    socket.emit(CHANNEL_JOIN, channelId, ({ data }: { data: { messages: ChatMessage[], hasMore: boolean } }) => {
       useMessageStore.getState().setMessages(data.messages);
       useMessageStore.getState().setHasMore(data.hasMore);
     });
-    socket.emit("mark_channel_read", channelId);
+    socket.emit(CHANNEL_MARK_READ, channelId);
   },
 })); 

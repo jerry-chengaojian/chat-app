@@ -1,7 +1,8 @@
 import { Socket } from "socket.io";
 import { prisma } from "@/lib/prisma";
-import { MessageResponse, MESSAGES_LIMIT } from "./message-handlers";
+import { MessageResponse } from "./message-handlers";
 import { ChannelType } from "@prisma/client";
+import { MESSAGES_LIMIT } from "@/config/constants";
 
 type ChannelResponse<T> = {
   data?: T;

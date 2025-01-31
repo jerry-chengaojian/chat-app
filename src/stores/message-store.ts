@@ -3,6 +3,7 @@ import { produce } from "immer";
 import { Message, User } from "@prisma/client";
 import socket from "@/lib/socket-client";
 import { useUserStore } from "./user-store";
+import { MESSAGE_SEND, MESSAGE_LOAD_MORE } from "@/config/constants";
 
 export interface ChatMessage extends Message {
   fromUser: User;
@@ -33,7 +34,7 @@ export const useMessageStore = create<MessageStore>((set) => ({
       state.messages.unshift(...messages);
     })),
   loadMoreMessages: (channelId, beforeId) => {
-    socket.emit('load_more_messages', { channelId, beforeId }, ({ data }: { data: { messages: ChatMessage[], hasMore: boolean } }) => {
+    socket.emit(MESSAGE_LOAD_MORE, { channelId, beforeId }, ({ data }: { data: { messages: ChatMessage[], hasMore: boolean } }) => {
       set(produce((state: MessageStore) => {
         state.messages.unshift(...data.messages);
         state.hasMore = data.hasMore;
@@ -56,7 +57,7 @@ export const useMessageStore = create<MessageStore>((set) => ({
       state.messages.push(tempMessage);
     }));
 
-    socket.emit("message:send", {
+    socket.emit(MESSAGE_SEND, {
       content: content.trim(),
       channelId,
     }, ({ data }: { data: ChatMessage }) => {
