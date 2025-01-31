@@ -20,8 +20,10 @@ const customFont = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "happy chat",
-  description: "happy chat",
+  title: "Chatter - Your Friendly Chat Application",
+  description:
+    "Join Happy Chat to connect with friends and share your thoughts.",
+  keywords: "chat, messaging, social, connect",
 };
 
 export default function RootLayout({
