@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
 import { prisma } from "@/lib/prisma";
-import { MESSAGES_LIMIT } from "@/config/constants";
+import { MESSAGE_NEW, MESSAGES_LIMIT } from "@/config/constants";
 
 export type MessageResponse<T> = {
   data?: T;
@@ -30,7 +30,7 @@ export function createMessageHandlers(socket: Socket) {
           },
         });
 
-        socket.broadcast.to(data.channelId).emit('message', message);
+        socket.broadcast.to(data.channelId).emit(MESSAGE_NEW, message);
         callback({ data: message });
       } catch (error) {
         console.error('Error saving message:', error);

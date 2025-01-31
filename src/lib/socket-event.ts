@@ -2,6 +2,7 @@ import socket from "@/lib/socket-client";
 import { useChannelStore } from "../stores/channel-store";
 import { useMessageStore } from "../stores/message-store";
 import { useUserStore } from "../stores/user-store";
+import { CHANNEL_LIST, MESSAGE_NEW, USER_LIST, USER_UPDATE } from "@/config/constants";
 
 export const bindSocketEvents = () => {
   // Debug logging
@@ -14,7 +15,7 @@ export const bindSocketEvents = () => {
   });
 
   // Message events
-  socket.on("message", (message) => {
+  socket.on(MESSAGE_NEW, (message) => {
     if (message.channelId === useChannelStore.getState().selectedChannelId) {
       useMessageStore.getState().addMessage(message);
     }
@@ -27,12 +28,12 @@ export const bindSocketEvents = () => {
   });
 
   // Channel events
-  socket.on('channels', (channels) => {
+  socket.on(CHANNEL_LIST, (channels) => {
     useChannelStore.getState().setChannels(channels);
   });
 
   // User events
-  socket.on("users", (users) => {
+  socket.on(USER_LIST, (users) => {
     useUserStore.getState().setUsers(users);
     const selectedChannelId = useChannelStore.getState().selectedChannelId;
     if (selectedChannelId) {
@@ -40,7 +41,7 @@ export const bindSocketEvents = () => {
     }
   });
 
-  socket.on("user", (user) => {
+  socket.on(USER_UPDATE, (user) => {
     useUserStore.getState().addUser(user);
     const selectedChannelId = useChannelStore.getState().selectedChannelId;
     if (selectedChannelId) {
@@ -56,11 +57,11 @@ export const bindSocketEvents = () => {
   socket.connect();
 
   return () => {
-    socket.off('message');
-    socket.off('channels');
+    socket.off(MESSAGE_NEW);
+    socket.off(CHANNEL_LIST);
     socket.off('error');
-    socket.off('user');
-    socket.off('users');
+    socket.off(USER_UPDATE);
+    socket.off(USER_LIST);
     socket.disconnect();
   };
 }; 
