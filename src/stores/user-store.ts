@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { produce, enableMapSet } from "immer";
 import { User } from "@prisma/client";
 import socket from "@/lib/socket-client";
+import { CHANNEL_GET_USER_IDS } from "@/config/constants";
 
 enableMapSet();
 
@@ -19,7 +20,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
   onlineCount: 0,
   setOnlineCount: (count) => set({ onlineCount: count }),
   updateOnlineCount: (channelId) => {
-    socket.emit('get_channel_user_ids', channelId, ({ data: userIds }: { data: string[] }) => {
+    socket.emit(CHANNEL_GET_USER_IDS, channelId, ({ data: userIds }: { data: string[] }) => {
       const onlineUsers = userIds.filter(id => {
         const user = get().users.get(id);
         return user?.isOnline;

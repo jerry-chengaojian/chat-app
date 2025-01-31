@@ -4,6 +4,7 @@ import { getToken } from "next-auth/jwt";
 import { createMessageHandlers } from './message-handlers';
 import { createChannelHandlers } from './channel-handlers';
 import { createUserHandlers } from './user-handlers';
+import { CHANNEL_GET_USER_IDS, CHANNEL_JOIN, CHANNEL_MARK_READ, MESSAGE_LOAD_MORE, MESSAGE_SEND } from "@/config/constants";
 
 declare module "socket.io" {
   interface Socket {
@@ -58,13 +59,13 @@ export function initializeSocketServer(httpServer: HttpServer) {
       await userHandlers.handleInitialUsers();
 
       // Register message event handlers
-      socket.on('message:send', messageHandlers.handleNewMessage);
-      socket.on('load_more_messages', messageHandlers.handleLoadMoreMessages);
+      socket.on(MESSAGE_SEND, messageHandlers.handleNewMessage);
+      socket.on(MESSAGE_LOAD_MORE, messageHandlers.handleLoadMoreMessages);
 
       // Register channel event handlers
-      socket.on('join_channel', channelHandlers.handleJoinChannel);
-      socket.on('mark_channel_read', channelHandlers.handleMarkChannelRead);
-      socket.on('get_channel_user_ids', channelHandlers.handleGetChannelUserIds);
+      socket.on(CHANNEL_JOIN, channelHandlers.handleJoinChannel);
+      socket.on(CHANNEL_MARK_READ, channelHandlers.handleMarkChannelRead);
+      socket.on(CHANNEL_GET_USER_IDS, channelHandlers.handleGetChannelUserIds);
 
       // Handle disconnect
       socket.on('disconnect', userHandlers.handleDisconnect);

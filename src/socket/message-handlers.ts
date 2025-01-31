@@ -1,7 +1,6 @@
 import { Socket } from "socket.io";
 import { prisma } from "@/lib/prisma";
-
-export const MESSAGES_LIMIT = 5;
+import { MESSAGES_LIMIT } from "@/config/constants";
 
 export type MessageResponse<T> = {
   data?: T;
