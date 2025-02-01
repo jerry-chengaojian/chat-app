@@ -124,7 +124,7 @@ export function createChannelHandlers(socket: Socket) {
         });
 
         if (existingChannel) {
-          const channelData = (await getUserChannels(socket.userId))
+          const channelData = (await getUserChannels(socket.userId, existingChannel.id))
             .find(c => c.id === existingChannel.id);
           
           if (channelData) {
@@ -149,7 +149,7 @@ export function createChannelHandlers(socket: Socket) {
           }
         });
 
-        const channelData = (await getUserChannels(socket.userId))
+        const channelData = (await getUserChannels(socket.userId, newChannel.id))
           .find(c => c.id === newChannel.id);
 
         if (channelData) {
@@ -164,11 +164,12 @@ export function createChannelHandlers(socket: Socket) {
   };
 } 
 
-async function getUserChannels(userId: string) {
+async function getUserChannels(userId: string, specificChannelId?: string) {
   // Fetch user's channels with flattened structure
   const userChannels = await prisma.userChannel.findMany({
     where: {
-      userId: userId
+      userId: userId,
+      ...(specificChannelId && { channelId: specificChannelId }) // Add channel filter if specificChannelId is provided
     },
     orderBy: {
       clientOffsetId: 'desc'
@@ -191,22 +192,21 @@ async function getUserChannels(userId: string) {
   return Promise.all(
     userChannels.map(async (uc) => {
       const channel = uc.channel;
-      const message = await prisma.message.findFirst({
-        where: { channelId: channel.id },
-        orderBy: { createdAt: 'desc' }
-      });
-      
-      // Count unread messages
-      const unreadCount = await prisma.message.count({
-        where: {
-          channelId: channel.id,
-          id: {
-            gt: uc.clientOffsetId ?? 0 // If clientOffsetId is null, count all messages
+      const [message, unreadCount] = await Promise.all([
+        prisma.message.findFirst({
+          where: { channelId: channel.id },
+          orderBy: { createdAt: 'desc' }
+        }),
+        prisma.message.count({
+          where: {
+            channelId: channel.id,
+            id: {
+              gt: uc.clientOffsetId ?? 0
+            }
           }
-        }
-      });
+        })
+      ]);
 
-      // For private channels, fetch the other user's name
       if (channel.type === ChannelType.private) {
         const otherUser = await prisma.userChannel.findFirst({
           where: {
