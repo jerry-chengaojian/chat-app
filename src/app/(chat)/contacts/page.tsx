@@ -9,6 +9,7 @@ import { CreateGroupModal } from "@/components/modal/create-group";
 import { useSession } from "next-auth/react";
 import { useChannelStore } from "@/stores/channel-store";
 import { useRouter } from "next/navigation";
+import { ChannelType } from "@prisma/client";
 
 export default function ContactsPage() {
   const { data: session } = useSession();
@@ -18,7 +19,7 @@ export default function ContactsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const router = useRouter();
-  const createOrGetPrivateChannel = useChannelStore(state => state.createOrGetPrivateChannel);
+  const createOrGetChannel = useChannelStore(state => state.createOrGetChannel);
 
   const filteredUsers = usersList.filter(user => 
     user.username?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -26,7 +27,7 @@ export default function ContactsPage() {
 
   const handleMessageClick = async (userId: string) => {
     try {
-      await createOrGetPrivateChannel(userId);
+      await createOrGetChannel([userId], ChannelType.private);
       router.push('/');
     } catch (error) {
       console.error('Failed to create/get private channel:', error);
