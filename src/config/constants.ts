@@ -10,7 +10,7 @@ export const CHANNEL_JOIN = 'channel:join';
 export const CHANNEL_MARK_READ = 'channel:mark_read';
 export const CHANNEL_GET_USER_IDS = 'channel:get_user_ids';
 export const CHANNEL_LIST = 'channel:list';
-export const CHANNEL_CREATE_OR_GET_PRIVATE = 'channel:create_or_get_private';
+export const CHANNEL_CREATE_OR_GET = 'channel:create_or_get';
 
 // User events
 export const USER_LIST = 'user:list';

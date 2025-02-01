@@ -101,50 +101,58 @@ export function createChannelHandlers(socket: Socket) {
       }
     },
 
-    handleCreateOrGetPrivateChannel: async (
-      targetUserId: string,
+    handleCreateOrGetChannel: async (
+      userIds: string[],
+      channelType: ChannelType,
       callback: (res: ChannelResponse<{ channel: ChatChannel }>) => void
     ) => {
       try {
-        // 查找是否已存在私聊频道
-        const existingChannel = await prisma.channel.findFirst({
-          where: {
-            type: ChannelType.private,
-            userChannels: {
-              every: {
-                userId: {
-                  in: [socket.userId, targetUserId]
+        if (channelType === ChannelType.private && userIds.length !== 1) {
+          callback({ error: "Private channels must have exactly one target user" });
+          return;
+        }
+
+        // Include the current user in the userIds array
+        const allUserIds = [socket.userId, ...userIds];
+
+        // For private channels, check if channel already exists
+        if (channelType === ChannelType.private) {
+          const existingChannel = await prisma.channel.findFirst({
+            where: {
+              type: channelType,
+              userChannels: {
+                every: {
+                  userId: {
+                    in: allUserIds
+                  }
                 }
               }
+            },
+            include: {
+              userChannels: true
             }
-          },
-          include: {
-            userChannels: true
-          }
-        });
+          });
 
-        if (existingChannel) {
-          const channelData = (await getUserChannels(socket.userId, existingChannel.id))
-            .find(c => c.id === existingChannel.id);
-          
-          if (channelData) {
-            if (!socket.rooms.has(existingChannel.id)) {
-              socket.join(existingChannel.id);
+          if (existingChannel) {
+            const channelData = (await getUserChannels(socket.userId, existingChannel.id))
+              .find(c => c.id === existingChannel.id);
+            
+            if (channelData) {
+              if (!socket.rooms.has(existingChannel.id)) {
+                socket.join(existingChannel.id);
+              }
+              callback({ data: { channel: channelData } });
+              return;
             }
-            callback({ data: { channel: channelData } });
-            return;
           }
         }
 
-        // 创建新的私聊频道
+        // Create new channel
         const newChannel = await prisma.channel.create({
           data: {
-            type: ChannelType.private,
+            type: channelType,
             userChannels: {
-              create: [
-                { userId: socket.userId },
-                { userId: targetUserId }
-              ]
+              create: allUserIds.map(userId => ({ userId }))
             }
           }
         });
@@ -157,8 +165,8 @@ export function createChannelHandlers(socket: Socket) {
           callback({ data: { channel: channelData } });
         }
       } catch (error) {
-        console.error("Error creating/getting private channel:", error);
-        callback({ error: "Failed to create/get private channel" });
+        console.error("Error creating/getting channel:", error);
+        callback({ error: "Failed to create/get channel" });
       }
     },
   };

@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import { produce } from "immer";
-import { Channel } from "@prisma/client";
+import { Channel, ChannelType } from "@prisma/client";
 import socket from "@/lib/socket-client";
 import { ChatMessage, useMessageStore } from "./message-store";
 import { useUserStore } from "./user-store";
-import { CHANNEL_CREATE_OR_GET_PRIVATE, CHANNEL_JOIN, CHANNEL_MARK_READ } from "@/config/constants";
+import { CHANNEL_CREATE_OR_GET, CHANNEL_JOIN, CHANNEL_MARK_READ } from "@/config/constants";
 
 export interface ChatChannel extends Channel {
   unreadCount: number;
@@ -23,7 +23,7 @@ interface ChannelStore {
   incrementUnreadCount: (channelId: string) => void;
   updateLatestMessage: (channelId: string, content: string, createdAt: Date) => void;
   handleChannelClick: (channelId: string) => void;
-  createOrGetPrivateChannel: (targetUserId: string) => Promise<void>;
+  createOrGetChannel: (userIds: string[], channelType: ChannelType) => Promise<void>;
 }
 
 export const useChannelStore = create<ChannelStore>((set, get) => ({
@@ -70,11 +70,12 @@ export const useChannelStore = create<ChannelStore>((set, get) => ({
     });
     socket.emit(CHANNEL_MARK_READ, channelId);
   },
-  createOrGetPrivateChannel: async (targetUserId: string) => {
+  createOrGetChannel: async (userIds: string[], channelType: ChannelType) => {
     return new Promise((resolve, reject) => {
       socket.emit(
-        CHANNEL_CREATE_OR_GET_PRIVATE,
-        targetUserId,
+        CHANNEL_CREATE_OR_GET,
+        userIds,
+        channelType,
         ({ data, error }: { data?: { channel: ChatChannel }, error?: string }) => {
           if (error) {
             reject(error);
