@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Search, X, Check } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
-import { User } from "@prisma/client";
+import { ChannelType, User } from "@prisma/client";
+import { useChannelStore } from "@/stores/channel-store";
+import { useRouter } from "next/navigation";
 
 interface CreateGroupModalProps {
   open: boolean;
@@ -17,7 +19,11 @@ interface CreateGroupModalProps {
 export function CreateGroupModal({ open, onOpenChange, users }: CreateGroupModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
-
+  const [isLoading, setIsLoading] = useState(false);
+  const createOrGetChannel = useChannelStore((state) => state.createOrGetChannel);
+  const router = useRouter();
+  const [channelName, setChannelName] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const filteredUsers = users.filter(user =>
     user.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -30,13 +36,44 @@ export function CreateGroupModal({ open, onOpenChange, users }: CreateGroupModal
     }
   };
 
+  const handleCreateGroup = async () => {
+    if (selectedUsers.length === 0 || !channelName.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      const userIds = selectedUsers.map(user => user.id);
+      await createOrGetChannel(userIds, ChannelType.public, channelName.trim());
+      onOpenChange(false);
+      router.push('/');
+    } catch (error) {
+      setError(error as string);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md p-8 bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold text-gray-900">发起群聊</DialogTitle>
-          <div className="text-sm text-muted-foreground">
-            已选择 {selectedUsers.length} 个联系人
+          <DialogTitle className="flex justify-between">
+            <div className="text-2xl font-semibold text-gray-900">
+              发起群聊
+            </div>
+            <div className="relative">
+              <Input
+                placeholder="请输入群组名称"
+                value={channelName}
+                onChange={(e) => setChannelName(e.target.value)}
+                className="w-60"
+              />
+            </div>
+          </DialogTitle>
+          <div>
+            <div className="text-sm text-muted-foreground">
+              已选择 {selectedUsers.length} 个联系人
+            </div>
+            {error && <div className="text-red-500">{error}</div>}
           </div>
         </DialogHeader>
 
@@ -99,14 +136,16 @@ export function CreateGroupModal({ open, onOpenChange, users }: CreateGroupModal
             variant="outline"
             className="flex-1 h-11 rounded-xl border-[#4086F4] hover:bg-[#F5F7FA]"
             onClick={() => onOpenChange(false)}
+            disabled={isLoading}
           >
             取消
           </Button>
           <Button
             className="flex-1 h-11 rounded-xl bg-[#4086F4] hover:bg-[#3476E3]"
-            onClick={() => onOpenChange(false)}
+            onClick={handleCreateGroup}
+            disabled={isLoading || selectedUsers.length === 0 || !channelName.trim()}
           >
-            创建
+            {isLoading ? "创建中..." : "创建"}
           </Button>
         </div>
       </DialogContent>

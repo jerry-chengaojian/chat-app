@@ -23,7 +23,7 @@ interface ChannelStore {
   incrementUnreadCount: (channelId: string) => void;
   updateLatestMessage: (channelId: string, content: string, createdAt: Date) => void;
   handleChannelClick: (channelId: string) => void;
-  createOrGetChannel: (userIds: string[], channelType: ChannelType) => Promise<void>;
+  createOrGetChannel: (userIds: string[], channelType: ChannelType, name: string | null) => Promise<void>;
 }
 
 export const useChannelStore = create<ChannelStore>((set, get) => ({
@@ -70,12 +70,13 @@ export const useChannelStore = create<ChannelStore>((set, get) => ({
     });
     socket.emit(CHANNEL_MARK_READ, channelId);
   },
-  createOrGetChannel: async (userIds: string[], channelType: ChannelType) => {
+  createOrGetChannel: async (userIds: string[], channelType: ChannelType, name: string | null) => {
     return new Promise((resolve, reject) => {
       socket.emit(
         CHANNEL_CREATE_OR_GET,
         userIds,
         channelType,
+        name,
         ({ data, error }: { data?: { channel: ChatChannel }, error?: string }) => {
           if (error) {
             reject(error);
