@@ -2,7 +2,7 @@ import { Socket } from "socket.io";
 import { prisma } from "../lib/prisma";
 import { MessageResponse } from "./message-handlers";
 import { ChannelType } from "@prisma/client";
-import { CHANNEL_LIST, MESSAGES_LIMIT } from "../config/constants";
+import { CHANNEL_ADDED, CHANNEL_LIST, MESSAGES_LIMIT } from "../config/constants";
 import { ChatMessage } from "@/stores/message-store";
 import { ChatChannel } from "@/stores/channel-store";
 
@@ -184,6 +184,12 @@ export function createChannelHandlers(socket: Socket) {
 
         if (channelData) {
           socket.join(newChannel.id);
+          
+          // Notify other users about the new channel
+          allUserIds.forEach(userId => {
+            socket.to(userId).emit(CHANNEL_ADDED, channelData);
+          });
+          
           callback({ data: { channel: channelData } });
         }
       } catch (error) {
