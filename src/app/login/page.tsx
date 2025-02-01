@@ -41,33 +41,39 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="max-w-sm w-full p-6 bg-white rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-center mb-6">Login</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4">
+      <div className="max-w-sm w-full p-8 bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
+        <h1 className="text-2xl font-semibold text-gray-900 text-center mb-8">登录</h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="rounded-xl">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className="space-y-2">
+          <div>
             <Input
               name="username"
               type="text"
-              placeholder="Username"
+              placeholder="用户名"
               required
+              className="rounded-xl h-11"
             />
           </div>
-          <div className="space-y-2">
+          <div>
             <Input
               name="password"
               type="password"
-              placeholder="Password"
+              placeholder="密码"
               required
+              className="rounded-xl h-11"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Loading..." : "Login"}
+          <Button 
+            type="submit" 
+            className="w-full h-11 rounded-xl bg-[#4086F4] hover:bg-[#3476E3]" 
+            disabled={loading}
+          >
+            {loading ? "登录中..." : "登录"}
           </Button>
         </form>
       </div>
