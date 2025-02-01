@@ -104,12 +104,33 @@ export function createChannelHandlers(socket: Socket) {
     handleCreateOrGetChannel: async (
       userIds: string[],
       channelType: ChannelType,
+      name: string | null,
       callback: (res: ChannelResponse<{ channel: ChatChannel }>) => void
     ) => {
       try {
         if (channelType === ChannelType.private && userIds.length !== 1) {
           callback({ error: "Private channels must have exactly one target user" });
           return;
+        }
+
+        if (channelType === ChannelType.public) {
+          if (!name?.trim()) {
+            callback({ error: "群组名称不能为空" });
+            return;
+          }
+
+          // Check if channel name already exists
+          const existingChannel = await prisma.channel.findFirst({
+            where: {
+              name: name.trim(),
+              type: ChannelType.public
+            }
+          });
+
+          if (existingChannel) {
+            callback({ error: "群组名称已存在" });
+            return;
+          }
         }
 
         // Include the current user in the userIds array
@@ -151,6 +172,7 @@ export function createChannelHandlers(socket: Socket) {
         const newChannel = await prisma.channel.create({
           data: {
             type: channelType,
+            name: channelType === ChannelType.public ? name?.trim() : undefined,
             userChannels: {
               create: allUserIds.map(userId => ({ userId }))
             }

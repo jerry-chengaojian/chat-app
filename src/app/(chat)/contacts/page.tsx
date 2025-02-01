@@ -27,7 +27,7 @@ export default function ContactsPage() {
 
   const handleMessageClick = async (userId: string) => {
     try {
-      await createOrGetChannel([userId], ChannelType.private);
+      await createOrGetChannel([userId], ChannelType.private, null);
       router.push('/');
     } catch (error) {
       console.error('Failed to create/get private channel:', error);
