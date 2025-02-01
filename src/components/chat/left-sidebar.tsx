@@ -37,16 +37,18 @@ export function LeftSidebar() {
           <span className={`text-xs ${pathname === "/contacts" ? "text-blue-500" : "text-gray-500"}`}>好友</span>
         </Link>
 
-        <div className="flex flex-col items-center">
+        <Link href="/mine" className="flex flex-col items-center">
           <Button
             variant="ghost"
             size="icon"
-            className="w-8 h-8 rounded-xl hover:bg-purple-50"
+            className={`w-8 h-8 rounded-xl ${
+              pathname === "/mine" ? "bg-blue-50 hover:bg-blue-50" : "hover:bg-blue-50"
+            }`}
           >
-            <User className="h-6 w-6 text-gray-500" />
+            <User className={`h-6 w-6 ${pathname === "/mine" ? "text-blue-500" : "text-gray-500"}`} />
           </Button>
-          <span className="text-xs text-gray-500">个人</span>
-        </div>
+          <span className={`text-xs ${pathname === "/mine" ? "text-blue-500" : "text-gray-500"}`}>个人</span>
+        </Link>
       </div>
     </div>
   );
