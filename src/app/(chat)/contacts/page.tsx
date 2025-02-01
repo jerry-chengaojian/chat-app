@@ -4,13 +4,17 @@ import { useUserStore } from "@/stores/user-store";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Plus } from "lucide-react";
+import { CreateGroupModal } from "@/components/modal/create-group";
+import { useSession } from "next-auth/react";
 
 export default function ContactsPage() {
+  const { data: session } = useSession();
   const users = useUserStore((state) => state.users);
-  const usersList = Array.from(users.values());
+  const usersList = Array.from(users.values()).filter(user => user.id !== session?.user?.userId);
   const [selectedUser, setSelectedUser] = useState<typeof usersList[0] | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
 
   const filteredUsers = usersList.filter(user => 
     user.username?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -22,6 +26,14 @@ export default function ContactsPage() {
         <div className="flex items-center p-4 border-b">
           <h1 className="text-xl font-semibold">好友列表</h1>
           <span className="ml-2 text-sm text-muted-foreground">{usersList.length} 位联系人</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ml-auto"
+            onClick={() => setIsCreateGroupOpen(true)}
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
         </div>
 
         <div className="p-3 border-b">
@@ -92,6 +104,12 @@ export default function ContactsPage() {
           </div>
         </div>
       )}
+
+      <CreateGroupModal
+        open={isCreateGroupOpen}
+        onOpenChange={setIsCreateGroupOpen}
+        users={usersList}
+      />
     </div>
   );
 } 
