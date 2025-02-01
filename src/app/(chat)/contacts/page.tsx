@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Search, Plus } from "lucide-react";
 import { CreateGroupModal } from "@/components/modal/create-group";
 import { useSession } from "next-auth/react";
+import { useChannelStore } from "@/stores/channel-store";
+import { useRouter } from "next/navigation";
 
 export default function ContactsPage() {
   const { data: session } = useSession();
@@ -15,10 +17,22 @@ export default function ContactsPage() {
   const [selectedUser, setSelectedUser] = useState<typeof usersList[0] | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const router = useRouter();
+  const createOrGetPrivateChannel = useChannelStore(state => state.createOrGetPrivateChannel);
 
   const filteredUsers = usersList.filter(user => 
     user.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleMessageClick = async (userId: string) => {
+    try {
+      await createOrGetPrivateChannel(userId);
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to create/get private channel:', error);
+      // 这里可以添加错误提示
+    }
+  };
 
   return (
     <div className="flex h-full flex-1">
@@ -96,7 +110,10 @@ export default function ContactsPage() {
               </div>
 
               <div className="flex justify-center">
-                <Button className="w-32 h-11 rounded-xl bg-[#4086F4] hover:bg-[#3476E3]">
+                <Button 
+                  className="w-32 h-11 rounded-xl bg-[#4086F4] hover:bg-[#3476E3]"
+                  onClick={() => handleMessageClick(selectedUser.id)}
+                >
                   发消息
                 </Button>
               </div>

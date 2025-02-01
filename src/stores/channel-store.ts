@@ -4,7 +4,7 @@ import { Channel } from "@prisma/client";
 import socket from "@/lib/socket-client";
 import { ChatMessage, useMessageStore } from "./message-store";
 import { useUserStore } from "./user-store";
-import { CHANNEL_JOIN, CHANNEL_MARK_READ } from "@/config/constants";
+import { CHANNEL_CREATE_OR_GET_PRIVATE, CHANNEL_JOIN, CHANNEL_MARK_READ } from "@/config/constants";
 
 export interface ChatChannel extends Channel {
   unreadCount: number;
@@ -23,6 +23,7 @@ interface ChannelStore {
   incrementUnreadCount: (channelId: string) => void;
   updateLatestMessage: (channelId: string, content: string, createdAt: Date) => void;
   handleChannelClick: (channelId: string) => void;
+  createOrGetPrivateChannel: (targetUserId: string) => Promise<void>;
 }
 
 export const useChannelStore = create<ChannelStore>((set, get) => ({
@@ -68,5 +69,37 @@ export const useChannelStore = create<ChannelStore>((set, get) => ({
       useMessageStore.getState().setHasMore(data.hasMore);
     });
     socket.emit(CHANNEL_MARK_READ, channelId);
+  },
+  createOrGetPrivateChannel: async (targetUserId: string) => {
+    return new Promise((resolve, reject) => {
+      socket.emit(
+        CHANNEL_CREATE_OR_GET_PRIVATE,
+        targetUserId,
+        ({ data, error }: { data?: { channel: ChatChannel }, error?: string }) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          
+          if (data) {
+            const { channel } = data;
+            set(produce((state: ChannelStore) => {
+              if (!state.channels.find(c => c.id === channel.id)) {
+                state.channels.unshift(channel);
+              } else {
+                const channelIndex = state.channels.findIndex(c => c.id === channel.id);
+                if (channelIndex !== -1) {
+                  const [existingChannel] = state.channels.splice(channelIndex, 1);
+                  state.channels.unshift(existingChannel);
+                }
+              }
+              state.selectedChannelId = channel.id;
+            }));
+            get().handleChannelClick(channel.id);
+            resolve();
+          }
+        }
+      );
+    });
   },
 })); 
