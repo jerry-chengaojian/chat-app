@@ -24,6 +24,7 @@ interface ChannelStore {
   updateLatestMessage: (channelId: string, content: string, createdAt: Date) => void;
   handleChannelClick: (channelId: string) => void;
   createOrGetChannel: (userIds: string[], channelType: ChannelType, name: string | null) => Promise<void>;
+  addChannel: (channel: ChatChannel) => void;
 }
 
 export const useChannelStore = create<ChannelStore>((set, get) => ({
@@ -104,4 +105,10 @@ export const useChannelStore = create<ChannelStore>((set, get) => ({
       );
     });
   },
+  addChannel: (channel) => 
+    set(produce((state: ChannelStore) => {
+      if (!state.channels.find(c => c.id === channel.id)) {
+        state.channels.unshift(channel);
+      }
+    })),
 })); 

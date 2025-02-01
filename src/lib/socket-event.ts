@@ -1,8 +1,8 @@
 import socket from "@/lib/socket-client";
-import { useChannelStore } from "../stores/channel-store";
+import { ChatChannel, useChannelStore } from "../stores/channel-store";
 import { useMessageStore } from "../stores/message-store";
 import { useUserStore } from "../stores/user-store";
-import { CHANNEL_LIST, CHANNEL_MARK_READ, MESSAGE_NEW, USER_LIST, USER_UPDATE } from "@/config/constants";
+import { CHANNEL_ADDED, CHANNEL_LIST, CHANNEL_MARK_READ, MESSAGE_NEW, USER_LIST, USER_UPDATE } from "@/config/constants";
 
 export const bindSocketEvents = () => {
   // Debug logging
@@ -50,6 +50,13 @@ export const bindSocketEvents = () => {
     }
   });
 
+  socket.on(CHANNEL_ADDED, (channel: ChatChannel) => {
+    const channels = useChannelStore.getState().channels;
+    if (!channels.find(c => c.id === channel.id)) {
+      useChannelStore.getState().addChannel(channel);
+    }
+  });
+
   // Error handling
   socket.on("error", (error: Error) => {
     console.error("Socket error:", error);
@@ -63,6 +70,7 @@ export const bindSocketEvents = () => {
     socket.off('error');
     socket.off(USER_UPDATE);
     socket.off(USER_LIST);
+    socket.off('CHANNEL_ADDED');
     socket.disconnect();
   };
 }; 
