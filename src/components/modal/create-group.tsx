@@ -32,9 +32,9 @@ export function CreateGroupModal({ open, onOpenChange, users }: CreateGroupModal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md p-8 bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
         <DialogHeader>
-          <DialogTitle className="text-lg font-medium">发起群聊</DialogTitle>
+          <DialogTitle className="text-2xl font-semibold text-gray-900">发起群聊</DialogTitle>
           <div className="text-sm text-muted-foreground">
             已选择 {selectedUsers.length} 个联系人
           </div>
@@ -97,13 +97,13 @@ export function CreateGroupModal({ open, onOpenChange, users }: CreateGroupModal
         <div className="flex gap-2 mt-4">
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 h-11 rounded-xl border-[#4086F4] hover:bg-[#F5F7FA]"
             onClick={() => onOpenChange(false)}
           >
             取消
           </Button>
           <Button
-            className="flex-1"
+            className="flex-1 h-11 rounded-xl bg-[#4086F4] hover:bg-[#3476E3]"
             onClick={() => onOpenChange(false)}
           >
             创建
