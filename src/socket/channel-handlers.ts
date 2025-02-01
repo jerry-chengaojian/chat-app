@@ -4,6 +4,7 @@ import { MessageResponse } from "./message-handlers";
 import { ChannelType } from "@prisma/client";
 import { CHANNEL_LIST, MESSAGES_LIMIT } from "../config/constants";
 import { ChatMessage } from "@/stores/message-store";
+import { ChatChannel } from "@/stores/channel-store";
 
 type ChannelResponse<T> = {
   data?: T;
@@ -97,6 +98,67 @@ export function createChannelHandlers(socket: Socket) {
       } catch (error) {
         console.error("Error fetching channel user IDs:", error);
         callback({ error: "Failed to fetch channel user IDs" });
+      }
+    },
+
+    handleCreateOrGetPrivateChannel: async (
+      targetUserId: string,
+      callback: (res: ChannelResponse<{ channel: ChatChannel }>) => void
+    ) => {
+      try {
+        // 查找是否已存在私聊频道
+        const existingChannel = await prisma.channel.findFirst({
+          where: {
+            type: ChannelType.private,
+            userChannels: {
+              every: {
+                userId: {
+                  in: [socket.userId, targetUserId]
+                }
+              }
+            }
+          },
+          include: {
+            userChannels: true
+          }
+        });
+
+        if (existingChannel) {
+          const channelData = (await getUserChannels(socket.userId))
+            .find(c => c.id === existingChannel.id);
+          
+          if (channelData) {
+            if (!socket.rooms.has(existingChannel.id)) {
+              socket.join(existingChannel.id);
+            }
+            callback({ data: { channel: channelData } });
+            return;
+          }
+        }
+
+        // 创建新的私聊频道
+        const newChannel = await prisma.channel.create({
+          data: {
+            type: ChannelType.private,
+            userChannels: {
+              create: [
+                { userId: socket.userId },
+                { userId: targetUserId }
+              ]
+            }
+          }
+        });
+
+        const channelData = (await getUserChannels(socket.userId))
+          .find(c => c.id === newChannel.id);
+
+        if (channelData) {
+          socket.join(newChannel.id);
+          callback({ data: { channel: channelData } });
+        }
+      } catch (error) {
+        console.error("Error creating/getting private channel:", error);
+        callback({ error: "Failed to create/get private channel" });
       }
     },
   };
