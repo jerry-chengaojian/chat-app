@@ -2,7 +2,7 @@ import socket from "@/lib/socket-client";
 import { useChannelStore } from "../stores/channel-store";
 import { useMessageStore } from "../stores/message-store";
 import { useUserStore } from "../stores/user-store";
-import { CHANNEL_LIST, MESSAGE_NEW, USER_LIST, USER_UPDATE } from "@/config/constants";
+import { CHANNEL_LIST, CHANNEL_MARK_READ, MESSAGE_NEW, USER_LIST, USER_UPDATE } from "@/config/constants";
 
 export const bindSocketEvents = () => {
   // Debug logging
@@ -18,6 +18,7 @@ export const bindSocketEvents = () => {
   socket.on(MESSAGE_NEW, (message) => {
     if (message.channelId === useChannelStore.getState().selectedChannelId) {
       useMessageStore.getState().addMessage(message);
+      socket.emit(CHANNEL_MARK_READ, message.channelId);
     }
     useChannelStore.getState().incrementUnreadCount(message.channelId);
     useChannelStore.getState().updateLatestMessage(
