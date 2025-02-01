@@ -46,8 +46,11 @@ export const useChannelStore = create<ChannelStore>((set, get) => ({
     })),
   updateLatestMessage: (channelId, content, createdAt) =>
     set(produce((state: ChannelStore) => {
-      const channel = state.channels.find((c) => c.id === channelId);
-      if (channel) {
+      const channelIndex = state.channels.findIndex((c) => c.id === channelId);
+      if (channelIndex !== -1) {
+        const channel = state.channels[channelIndex];
+        state.channels.splice(channelIndex, 1);
+        state.channels.unshift(channel);
         channel.latestMessage = { content, createdAt };
       }
     })),
