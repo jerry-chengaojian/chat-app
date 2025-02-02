@@ -51,8 +51,9 @@ export const bindSocketEvents = () => {
   });
 
   socket.on(CHANNEL_ADDED, (channel: ChatChannel) => {
-    const channels = useChannelStore.getState().channels;
-    if (!channels.find(c => c.id === channel.id)) {
+    // 使用防抖来确保只处理一次相同的channel
+    const existingChannel = useChannelStore.getState().channels.find(c => c.id === channel.id);
+    if (!existingChannel) {
       useChannelStore.getState().addChannel(channel);
     }
   });
@@ -65,12 +66,14 @@ export const bindSocketEvents = () => {
   socket.connect();
 
   return () => {
+    socket.offAny();
+    socket.offAnyOutgoing();
     socket.off(MESSAGE_NEW);
     socket.off(CHANNEL_LIST);
     socket.off('error');
     socket.off(USER_UPDATE);
     socket.off(USER_LIST);
-    socket.off('CHANNEL_ADDED');
+    socket.off(CHANNEL_ADDED);
     socket.disconnect();
   };
 }; 

@@ -12,6 +12,7 @@ export const CHANNEL_GET_USER_IDS = 'channel:get_user_ids';
 export const CHANNEL_LIST = 'channel:list';
 export const CHANNEL_CREATE_OR_GET = 'channel:create_or_get';
 export const CHANNEL_ADDED = 'channel:added';
+export const CHANNEL_JOIN_ROOM = 'channel:join_room';
 
 // User events
 export const USER_LIST = 'user:list';

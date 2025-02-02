@@ -10,6 +10,7 @@ import {
   MESSAGE_LOAD_MORE,
   MESSAGE_SEND,
   CHANNEL_CREATE_OR_GET,
+  CHANNEL_JOIN_ROOM,
 } from "../config/constants";
 
 declare module "socket.io" {
@@ -74,6 +75,7 @@ export function initializeSocketServer(httpServer: HttpServer) {
       socket.on(CHANNEL_MARK_READ, channelHandlers.handleMarkChannelRead);
       socket.on(CHANNEL_GET_USER_IDS, channelHandlers.handleGetChannelUserIds);
       socket.on(CHANNEL_CREATE_OR_GET, channelHandlers.handleCreateOrGetChannel);
+      socket.on(CHANNEL_JOIN_ROOM, channelHandlers.handleJoinChannelRoom);
 
       // Handle disconnect
       socket.on("disconnect", userHandlers.handleDisconnect);

@@ -197,6 +197,31 @@ export function createChannelHandlers(socket: Socket) {
         callback({ error: "Failed to create/get channel" });
       }
     },
+
+    handleJoinChannelRoom: async (channelId: string, callback: (res: ChannelResponse<{ channel: ChatChannel }>) => void) => {
+      try {
+        // Verify user has access to this channel
+        const hasAccess = await prisma.userChannel.findFirst({
+          where: {
+            channelId,
+            userId: socket.userId
+          }
+        });
+
+        if (!hasAccess) {
+          console.error(`User ${socket.userId} attempted to join unauthorized channel ${channelId}`);
+          return;
+        }
+        const channelData = (await getUserChannels(socket.userId, channelId))
+          .find(c => c.id === channelId);
+        if (channelData) {
+          socket.join(channelId);
+          callback({ data: { channel: channelData } });
+        }
+      } catch (error) {
+        console.error("Error joining channel room:", error);
+      }
+    },
   };
 } 
 
