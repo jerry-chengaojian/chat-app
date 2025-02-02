@@ -4,7 +4,7 @@ import { Channel, ChannelType } from "@prisma/client";
 import socket from "@/lib/socket-client";
 import { ChatMessage, useMessageStore } from "./message-store";
 import { useUserStore } from "./user-store";
-import { CHANNEL_CREATE_OR_GET, CHANNEL_JOIN, CHANNEL_MARK_READ } from "@/config/constants";
+import { CHANNEL_CREATE_OR_GET, CHANNEL_JOIN, CHANNEL_MARK_READ, CHANNEL_JOIN_ROOM } from "@/config/constants";
 
 export interface ChatChannel extends Channel {
   unreadCount: number;
@@ -105,10 +105,13 @@ export const useChannelStore = create<ChannelStore>((set, get) => ({
       );
     });
   },
-  addChannel: (channel) => 
-    set(produce((state: ChannelStore) => {
-      if (!state.channels.find(c => c.id === channel.id)) {
-        state.channels.unshift(channel);
-      }
-    })),
+  addChannel: (channel) => {
+    if (!get().channels.find(c => c.id === channel.id)) {
+      socket.emit(CHANNEL_JOIN_ROOM, channel.id, ({ data }: { data: { channel: ChatChannel } }) => {
+        if (!get().channels.find(c => c.id === data.channel.id)) {
+          get().setChannels([data.channel, ...get().channels]);
+        }
+      });
+    }
+  }
 })); 
