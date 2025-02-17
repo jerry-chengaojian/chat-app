@@ -4,6 +4,7 @@ import { Message, User } from "@prisma/client";
 import socket from "@/lib/socket-client";
 import { useUserStore } from "./user-store";
 import { MESSAGE_SEND, MESSAGE_LOAD_MORE } from "@/config/constants";
+import { useChannelStore } from "./channel-store";
 
 export interface ChatMessage extends Message {
   fromUser: Omit<User, "password">;
@@ -57,6 +58,13 @@ export const useMessageStore = create<MessageStore>((set) => ({
       state.messages.push(tempMessage);
     }));
 
+    // Update latest message in channel store immediately with temp message
+    useChannelStore.getState().updateLatestMessage(
+      channelId, 
+      tempMessage.content, 
+      tempMessage.createdAt
+    );
+
     socket.emit(MESSAGE_SEND, {
       content: content.trim(),
       channelId,
@@ -67,6 +75,13 @@ export const useMessageStore = create<MessageStore>((set) => ({
           state.messages[index] = data;
         }
       }));
+      
+      // Update latest message in channel store again with confirmed data
+      useChannelStore.getState().updateLatestMessage(
+        channelId,
+        data.content,
+        data.createdAt
+      );
     });
   },
 })); 
