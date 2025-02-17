@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { signIn } from "next-auth/react";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -18,23 +18,48 @@ export default function LoginPage() {
     setError(null);
 
     const formData = new FormData(event.currentTarget);
+    const username = formData.get("username");
+    const password = formData.get("password");
+    const confirmPassword = formData.get("confirmPassword");
+
+    if (password !== confirmPassword) {
+      setError("两次输入的密码不一致");
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await signIn("credentials", {
-        username: formData.get("username"),
-        password: formData.get("password"),
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "注册失败");
+        return;
+      }
+
+      // Automatically sign in after successful registration
+      const signInResponse = await signIn("credentials", {
+        username,
+        password,
         redirect: false,
       });
 
-      if (response?.error) {
-        setError("Invalid username or password");
+      if (signInResponse?.error) {
+        setError("登录失败");
         return;
       }
 
       router.push("/");
       router.refresh();
     } catch (error) {
-      setError("Something went wrong. Please try again.");
+      setError("发生错误，请重试");
     } finally {
       setLoading(false);
     }
@@ -43,7 +68,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#F5F7FA] flex items-center justify-center p-4">
       <div className="max-w-sm w-full p-8 bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
-        <h1 className="text-2xl font-semibold text-gray-900 text-center mb-8">登录</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 text-center mb-8">注册</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <Alert variant="destructive" className="rounded-xl">
@@ -68,21 +93,30 @@ export default function LoginPage() {
               className="rounded-xl h-11"
             />
           </div>
+          <div>
+            <Input
+              name="confirmPassword"
+              type="password"
+              placeholder="确认密码"
+              required
+              className="rounded-xl h-11"
+            />
+          </div>
           <Button 
             type="submit" 
             className="w-full h-11 rounded-xl bg-[#4086F4] hover:bg-[#3476E3]" 
             disabled={loading}
           >
-            {loading ? "登录中..." : "登录"}
+            {loading ? "注册中..." : "注册"}
           </Button>
         </form>
         <p className="mt-6 text-center text-sm text-gray-500">
-          还没有账号？{" "}
-          <a href="/register" className="text-[#4086F4] hover:text-[#3476E3] font-medium">
-            立即注册
+          已有账号？{" "}
+          <a href="/login" className="text-[#4086F4] hover:text-[#3476E3] font-medium">
+            立即登录
           </a>
         </p>
       </div>
     </div>
   );
-}
+} 
